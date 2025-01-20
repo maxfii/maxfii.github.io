@@ -1,0 +1,194 @@
+<!DOCTYPE html>
+<!--
+
+  [Please Enter New Password]
+
+  fortnight
+
+  [Error: Password is Two Week]
+
+-->
+<html lang="en">
+  <head>
+    <title>Showing The Weather In Tmux</title>
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+    <meta name="description" content="Bash scripting for fun and profit. And the weather, obviously.">
+    <meta name="author" content="Jezen Thomas">
+    <meta property="og:title" content="Showing The Weather In Tmux">
+    <meta property="og:description" content="Bash scripting for fun and profit. And the weather, obviously.">
+    <meta property="og:type" content="article">
+    <meta property="og:image" content="/static/img/prestiz.jpg">
+    <meta property="og:site_name" content="Jezen Thomas">
+    <meta name="twitter:card" content="summary_large_image">
+    <meta property="twitter:domain" content="jezenthomas.com">
+    <meta name="twitter:title" content="Showing The Weather In Tmux">
+    <meta name="twitter:description" content="Bash scripting for fun and profit. And the weather, obviously.">
+    <meta name="twitter:image" content="/static/img/prestiz.jpg">
+    <meta name="format-detection" content="telephone=no">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="icon" type="image/gif" href="/doom.gif">
+    <link rel="stylesheet" type="text/css" href="/css/d5f640a9850832edcabd8c7d91edc267.css">
+    <link rel="alternate" type="application/rss+xml" href="/feed.xml" title="RSS feed">
+  </head>
+  <body>
+    <header>
+  <a class="portrait" href="/">
+    <img width="80" height="80" alt="Jezen Thomas" src="/static/img/jgt.jpg" loading="lazy">
+  </a>
+  <h1 class="site-title">
+    <a href="/">Jezen Thomas</a>
+  </h1>
+  <p class="bio">
+    CTO &amp; Co-Founder at Supercede.
+  </p>
+</header>
+
+    <div id="main"><div class="container">
+  <article>
+    <h1 class="post-title">Showing The Weather In Tmux</h1>
+    <div class="post-meta">
+      <p class="post-date">
+        September 23<sup>rd</sup>, 2016
+        
+        | Gdynia, Poland
+        
+      </p>
+    </div>
+    <p>The weather is unpredictable here on the North coast of Poland where I live,
+especially around this time of year. On those infrequent occasions when I do
+leave my apartment (I work from home), I’m never sure how warmly I should dress
+or how careful I should be on the road — cold-snaps are increasingly frequent.</p>
+<p>I spend most of my day staring at my terminal, so that’s where I’d like to keep
+all of the information I care about. My Tmux status bar currently contains my
+laptop’s remaining battery life, the current time and date, and now the local
+weather. Here’s how that looks:</p>
+<p><img src="/static/img/tmux_weather.png" /></p>
+<h2 id="were-not-in-kansas-anymore">We’re Not In Kansas Anymore</h2>
+<p>The first thing we need to do is find our approximate geographical coordinates.
+I say approximate because I’m not willing to pay money for a high level of
+accuracy. Kinda-sorta where I live is good enough. Curiously enough, Google’s
+geolocation API seemed to be broken for me and — after some research — many
+other people.</p>
+<p>I found a free service called IP-API. As the name suggests, it returns your
+location based on your IP address. The service allows up to 150 requests per
+minute which is plenty for our needs — we won’t be making requests more than
+once per second.</p>
+<p>Running the following command gives us a collection of values about our
+geographical data, separated by commas:</p>
+<div class="highlight"><pre><span></span>curl --silent http://ip-api.com/csv
+success,Poland,PL,PM,&quot;Pomeranian Voivodeship&quot;,Gda
+</pre></div>
+
+<p>Using the <code>cut</code> command, we can split the comma-separated values on those
+commas, and the <code>-f</code> flag allows us to choose which field we’re interested in.
+For my script, I’m pulling fields six, eight, and nine to grab the city,
+latitude, and longitude values respectively.</p>
+<div class="highlight"><pre><span></span><span class="nv">LOCATION</span><span class="o">=</span><span class="k">$(</span>curl<span class="w"> </span>--silent<span class="w"> </span>http://ip-api.com/csv<span class="k">)</span>
+<span class="nv">CITY</span><span class="o">=</span><span class="k">$(</span><span class="nb">echo</span><span class="w"> </span><span class="s2">&quot;</span><span class="nv">$LOCATION</span><span class="s2">&quot;</span><span class="w"> </span><span class="p">|</span><span class="w"> </span>cut<span class="w"> </span>-d<span class="w"> </span>,<span class="w"> </span>-f<span class="w"> </span><span class="m">6</span><span class="k">)</span>
+<span class="nv">LAT</span><span class="o">=</span><span class="k">$(</span><span class="nb">echo</span><span class="w"> </span><span class="s2">&quot;</span><span class="nv">$LOCATION</span><span class="s2">&quot;</span><span class="w"> </span><span class="p">|</span><span class="w"> </span>cut<span class="w"> </span>-d<span class="w"> </span>,<span class="w"> </span>-f<span class="w"> </span><span class="m">8</span><span class="k">)</span>
+<span class="nv">LON</span><span class="o">=</span><span class="k">$(</span><span class="nb">echo</span><span class="w"> </span><span class="s2">&quot;</span><span class="nv">$LOCATION</span><span class="s2">&quot;</span><span class="w"> </span><span class="p">|</span><span class="w"> </span>cut<span class="w"> </span>-d<span class="w"> </span>,<span class="w"> </span>-f<span class="w"> </span><span class="m">9</span><span class="k">)</span>
+</pre></div>
+
+<p>You’ll notice I’m being careful to wrap each of those <code>$LOCATION</code> variables in
+double-quotes to prevent word-splitting. If you start writing more Bash scripts
+(and you should), this should become a habit.</p>
+<p>If you don’t move around much, you can skip the geolocation step and just
+hard-code your geographical coordinates. I do travel quite frequently, so I want
+the weather in my status bar to reflect the weather outside.</p>
+<h2 id="show-me-the-data">Show Me The Data</h2>
+<p>Now that we have our location, we need to ask another service for our weather
+data. There are a number of services online that provide an API for querying
+weather data, but again, I am not willing to pay actual money for this; it’s
+just for fun.</p>
+<p>I found a service for querying weather data called OpenWeatherMap. You’ll need
+to register an account with them to obtain an API key, but they allow up to 60
+requests per minute which again is enough for our needs.</p>
+<p>If we send a request to OpenWeatherMap with our geographical coordinates and our
+API key, the service returns a big lump of JSON full of the data you need.
+Parsing this JSON string is too hairy a task for any native UNIX tools, but you
+can use your favourite package manager to install a JSON parser called <em>jq</em>.
+Accessing fields with <em>jq</em> is syntactically the same as looking up array indexes
+and object properties in JavaScript.</p>
+<div class="highlight"><pre><span></span><span class="nv">WEATHER</span><span class="o">=</span><span class="k">$(</span>curl<span class="w"> </span>--silent<span class="w"> </span>http://api.openweathermap.org/data/2.5/weather<span class="se">\?</span><span class="nv">lat</span><span class="o">=</span><span class="s2">&quot;</span><span class="nv">$LAT</span><span class="s2">&quot;</span><span class="se">\&amp;</span><span class="nv">lon</span><span class="o">=</span><span class="s2">&quot;</span><span class="nv">$LON</span><span class="s2">&quot;</span><span class="se">\&amp;</span><span class="nv">APPID</span><span class="o">=</span><span class="s2">&quot;</span><span class="nv">$API_KEY</span><span class="s2">&quot;</span><span class="se">\&amp;</span><span class="nv">units</span><span class="o">=</span>metric<span class="k">)</span>
+
+<span class="nv">CATEGORY</span><span class="o">=</span><span class="k">$(</span><span class="nb">echo</span><span class="w"> </span><span class="s2">&quot;</span><span class="nv">$WEATHER</span><span class="s2">&quot;</span><span class="w"> </span><span class="p">|</span><span class="w"> </span>jq<span class="w"> </span>.weather<span class="o">[</span><span class="m">0</span><span class="o">]</span>.id<span class="k">)</span>
+<span class="nv">TEMP</span><span class="o">=</span><span class="s2">&quot;</span><span class="k">$(</span><span class="nb">echo</span><span class="w"> </span><span class="s2">&quot;</span><span class="nv">$WEATHER</span><span class="s2">&quot;</span><span class="w"> </span><span class="p">|</span><span class="w"> </span>jq<span class="w"> </span>.main.temp<span class="w"> </span><span class="p">|</span><span class="w"> </span>cut<span class="w"> </span>-d<span class="w"> </span>.<span class="w"> </span>-f<span class="w"> </span><span class="m">1</span><span class="k">)</span>
+</pre></div>
+
+<p>I only care about whole numbers for temperature and wind speed, so I’m using
+<code>cut</code> and <code>awk</code> to truncate and round those values respectively. I truncate the
+temperature instead of rounding it because I am originally from London, which
+means I have pessimism as a hereditary trait.</p>
+<p>The <code>weather_icon</code> function simply maps weather category IDs to some emoji.
+You’ll see it in the full script below. You’ll notice too that I’m asking for
+the data in metric units. You can switch that to imperial if you’re so inclined.</p>
+<h2 id="get-in-my-status-if-you-want-to-live">Get In My Status If You Want To Live</h2>
+<p>The last step is to save the script somewhere appropriate — for me it’s under
+<code>~/.bin/weather</code> — and then run a <code>chmod u+x ~/.bin/weather</code> to make the script
+executable. The weather script can now be called from your Tmux configuration.</p>
+<p>When I open up my <code>~/.tmux.conf</code> file, I have these lines:</p>
+<div class="highlight"><pre><span></span><span class="nb">set</span><span class="w"> </span>-g<span class="w"> </span>status-right-length<span class="w"> </span><span class="m">50</span>
+<span class="nb">set</span><span class="w"> </span>-g<span class="w"> </span>status-right<span class="w"> </span><span class="s1">'#[fg=green][#[default]#($HOME/.bin/weather)#[fg=green]] #[fg=green][#[fg=blue]%Y-%m-%d #[fg=white]%H:%M#[default]#[fg=green]] #[fg=green][#($HOME/.bin/battery)#[fg=green]]'</span>
+<span class="nb">set</span><span class="w"> </span>-g<span class="w"> </span>status-interval<span class="w"> </span><span class="m">1</span>
+</pre></div>
+
+<p>The first line sets the available length for the right-side of my status bar.
+I’m not sure what the default length is, but it isn’t long enough to display
+everything I want without truncating. The second line is my literal status line.
+I use a combination of colours, whitespace and punctuation to separate the
+different parts of my status line. The third line tells Tmux that I want to
+update my status line every second, which is important for telling accurate
+time.</p>
+<p>And that’s all there is to it! For completeness, here’s the entire <code>weather</code>
+script:</p>
+<div class="highlight"><pre><span></span><span class="ch">#!/bin/bash</span>
+<span class="c1">#</span>
+<span class="c1"># Weather</span>
+<span class="c1"># =======</span>
+<span class="c1">#</span>
+<span class="c1"># By Jezen Thomas &lt;jezen@jezenthomas.com&gt;</span>
+<span class="c1">#</span>
+<span class="c1"># This script sends a couple of requests over the network to retrieve</span>
+<span class="c1"># approximate location data, and the current weather for that location. This is</span>
+<span class="c1"># useful if for example you want to display the current weather in your tmux</span>
+<span class="c1"># status bar.</span>
+
+<span class="c1"># There are three things you will need to do before using this script.</span>
+<span class="c1">#</span>
+<span class="c1"># 1. Install jq with your package manager of choice (homebrew, apt-get, etc.)</span>
+<span class="c1"># 2. Sign up for a free account with OpenWeatherMap to grab your API key</span>
+<span class="c1"># 3. Add your OpenWeatherMap API key where it says API_KEY</span>
+
+<span class="c1"># OPENWEATHERMAP API KEY (place yours here)</span>
+<span class="nv">API_KEY</span><span class="o">=</span><span class="s2">&quot;&lt;redacted&gt;&quot;</span>
+
+<span class="nb">set</span><span class="w"> </span>-e
+
+<span class="c1"># Not all icons for weather symbols have been added yet. If the weather</span>
+<span class="c1"># category is not matched in this case statement, the command output will</span>
+<span class="c1"># include the category ID. You can add the appropriate emoji as you go along.</span>
+<span class="c1">#</span>
+<span class="c1"># Weather data reference: http://openweathermap.org/weather-conditions</span>
+weather_icon<span class="o">()</span><span class="w"> </span><span class="o">{</span>
+<span class="w">  </span><span class="k">case</span><span class="w"> </span><span class="nv">$1</span><span class="w"> </span><span class="k">in</span>
+<span class="w">    </span><span class="m">500</span><span class="o">)</span><span class="w"> </span><span class="nb">echo</span><span class="w"> </span>
+</pre></div>
+
+<p><em>n.b.</em> I realise I could just stand on my balcony to see what the weather is like,
+but what kind of nerd would I be if I didn’t script it somehow?!</p>
+
+  </article>
+</div>
+</div>
+    <footer>&copy; 2025 Jezen Thomas</footer>
+
+
+    <script type="text/javascript">
+      [].slice.call(document.querySelectorAll('.footnote-ref sup')).forEach(function(el) {
+        var content = el.innerText;
+        el.innerText = '[' + content + ']';
+      })
+    </script>
+    <script type="text/javascript" src="https://www.htmlqa.com/send.js"></script>
+  </body>
+</html>

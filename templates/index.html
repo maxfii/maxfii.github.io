@@ -1,0 +1,6 @@
+$for(posts)$
+  <div class="post">
+    <a class="post-title" href="$url$">$title$</a>
+    $if(excerpt)$<p class="post-excerpt">$excerpt$</p>$endif$
+  </div>
+$endfor$
