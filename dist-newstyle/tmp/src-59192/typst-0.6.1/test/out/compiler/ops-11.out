@@ -1,3 +1,0 @@
-"test/typ/compiler/ops-11.typ" (line 19, column 5):
-unexpected ":"
-expecting "//", "/*", operator or ")"

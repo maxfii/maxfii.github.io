@@ -1,2 +1,0 @@
-#footnote[Hi]
-

@@ -1,3 +1,0 @@
-// Default ellipse.
-#ellipse()
-

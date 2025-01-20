@@ -1,2 +1,0 @@
-$dots$
-$quote.l$
