@@ -29,7 +29,7 @@ jobs:
           git config user.email "maxfiialkovskyi@protonmais.com"
           git config user.name "maxfii"
           git add webmentions.json
-          git commit -m "${COMMIT_MSG}"; git push origin test
+          git diff --quiet && git diff --staged --quiet || (git commit -m "${COMMIT_MSG}"; git push origin test)
 
       - name: Deploy
         uses: JamesIves/github-pages-deploy-action@v4
