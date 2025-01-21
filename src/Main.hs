@@ -33,6 +33,7 @@ import Data.Map (Map)
 import Data.Map qualified as Map
 import Data.Vector (Vector, fromList)
 import Data.Vector qualified as V
+import Data.Aeson (Value)
 
 import WMentions
 
@@ -120,32 +121,21 @@ hmain = hakyll $ do
       ident <- getUnderlying
 
       let wmreplies = listField "replies" (field "repl" (return . itemBody))
-            (traverse (makeItem . fromMaybe "" . renderReply)
-                (V.toList . fromMaybe V.empty . Map.lookup target $ replies mentions))
+            (traverse (makeItem  . fromMaybe "" . renderReply)
+                (V.toList . fromMaybe V.empty . Map.lookup (target) $ replies mentions))
 
           wmlikes = listField "likes" (field "like" (return . itemBody))
             (traverse (makeItem . fromMaybe "" . renderLike)
                 (V.toList . fromMaybe V.empty . Map.lookup target $ likes mentions))
 
           wmreposts = listField "reposts" (field "repo" (return . itemBody))
-            (traverse (makeItem . fromMaybe "" . renderRepost)
+            (traverse (makeItem .  fromMaybe "" . renderRepost)
                 (V.toList . fromMaybe V.empty . Map.lookup target $ reposts mentions))
 
           ctx = postCtx <> utcCtx <> wmreplies <> wmlikes
+
           cleanTarget = dropExtension . joinPath . drop 1 . splitPath . toFilePath
-          target = drop 8 host </> cleanTarget ident <> "/"
-
-          count = fmap $ foldl (\acc _ -> acc+1) 0
-
-      -- debugCompiler $ "LOOK: reading mentions: " <> (show . Map.lookup "maxfii.github.io/2023/11/stubbing-io-in-yesod/" $ replies mentions)
-      if target == "maxfii.github.io/2023/11/stubbing-io-in-yesod/"
-        then do
-            debugCompiler $ "LOOK: counting replies: " <> (show . count . Map.lookup target $ replies mentions)
-            debugCompiler $ "LOOK: counting likes: " <> (show . count . Map.lookup target $ likes mentions)
-            debugCompiler $ "LOOK: counting reposts: " <> (show . count . Map.lookup target $ reposts mentions)
-        else pure ()
-      debugCompiler $ "LOOK: reading target: " <> target
-
+          target = traceShowId $ drop 8 host </> cleanTarget ident <> "/"
 
       blogCompiler
         >>= loadAndApplyTemplate "templates/post-content.html" postCtx

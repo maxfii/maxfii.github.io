@@ -21,6 +21,7 @@ import Text.Blaze.Html5.Attributes qualified as H
 import Data.String (fromString)
 import Network.Wreq qualified as W
 import Data.Aeson
+import Data.Aeson (Value)
 import Data.Aeson.KeyMap qualified as JK
 import Control.Lens ((^.))
 import Data.Vector (Vector, fromList)
@@ -31,6 +32,7 @@ import Data.Text qualified as T
 import Data.ByteString (ByteString)
 import Data.ByteString qualified as B
 import Data.Ord qualified as Ord
+import Control.Applicative ((<|>))
 
 type WMPost = String
 
@@ -91,8 +93,7 @@ renderReply (Object kmap) = do
   String (T.unpack -> published) <- JK.lookup "published" kmap
   Object author <- JK.lookup "author" kmap
   Object content <- JK.lookup "content" kmap
-  String (T.unpack -> chtml) <- JK.lookup "html" content
-  String (T.unpack -> ctext) <- JK.lookup "text" content
+  String (T.unpack -> chtml) <- JK.lookup "html" content <|> JK.lookup "text" content
   String (T.unpack -> authorPhotoUrl) <- JK.lookup "photo" author
   String (T.unpack -> authorName) <- JK.lookup "name" author
   String (T.unpack -> authorUrl) <- JK.lookup "url" author
