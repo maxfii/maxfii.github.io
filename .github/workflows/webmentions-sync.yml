@@ -28,8 +28,11 @@ jobs:
         run: |
             git config user.name "github-actions[bot]"
             git config user.email "github-actions[bot]@users.noreply.github.com"
+            set +e
             git add webmentions.json
             git diff --quiet && git diff --staged --quiet || (git commit -m "Sync webmentions [skip actions]"; git push origin test)
+
+            set -e
 
       - name: Deploy
         uses: JamesIves/github-pages-deploy-action@v4
