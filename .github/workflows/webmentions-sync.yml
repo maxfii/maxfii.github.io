@@ -22,6 +22,8 @@ jobs:
         run: ./result/bin/site rebuild -v
 
       - name: Commit webmentions to repository
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run:
           if git diff webmentions.json --quiet; then
             git config user.name "github-actions[bot]"
