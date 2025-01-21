@@ -18,15 +18,15 @@ jobs:
         run: ./result/bin/site rebuild -v
 
       - name: Commit webmentions to repository
-        env:
-          COMMIT_MSG: |
-            Sync webmentions [skip actions]
-        run: |
-          git config user.email "maxfiialkovskyi@protonmais.com"
-          git config user.name "maxfii"
-          touch webmentions.json
-          git add webmentions.json
-          git diff --quiet && git diff --staged --quiet || (git commit -m "${COMMIT_MSG}"; git push origin test)
+        run:
+          if git diff webmentions.json --quiet; then
+            git config user.name "github-actions[bot]"
+            git config user.email "github-actions[bot]@users.noreply.github.com"
+
+            git add webmentions.json
+            git commit -m "Sync webmentions [skip actions]"
+            git push origin test
+          fi
 
       - name: Deploy
         uses: JamesIves/github-pages-deploy-action@v4
