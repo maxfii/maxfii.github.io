@@ -1,0 +1,113 @@
+<!DOCTYPE html>
+<!--
+
+  [Please Enter New Password]
+
+  fortnight
+
+  [Error: Password is Two Week]
+
+-->
+<html lang="en">
+  <head>
+    <title>Free Internet on Trains</title>
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+    <meta name="description" content="A bash function for changing your MAC address on OSX which usually works around Internet access time limits on public WiFi hotspots.">
+    <meta name="author" content="Jezen Thomas">
+    <meta property="og:title" content="Free Internet on Trains">
+    <meta property="og:description" content="A bash function for changing your MAC address on OSX which usually works around Internet access time limits on public WiFi hotspots.">
+    <meta property="og:type" content="article">
+    <meta property="og:image" content="/static/img/prestiz.jpg">
+    <meta property="og:site_name" content="Jezen Thomas">
+    <meta name="twitter:card" content="summary_large_image">
+    <meta property="twitter:domain" content="jezenthomas.com">
+    <meta name="twitter:title" content="Free Internet on Trains">
+    <meta name="twitter:description" content="A bash function for changing your MAC address on OSX which usually works around Internet access time limits on public WiFi hotspots.">
+    <meta name="twitter:image" content="/static/img/prestiz.jpg">
+    <meta name="format-detection" content="telephone=no">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="icon" type="image/gif" href="/doom.gif">
+    <link rel="stylesheet" type="text/css" href="/css/35775f44348a64a19351c3e80ea2fa0a.css">
+    <link rel="alternate" type="application/rss+xml" href="/feed.xml" title="RSS feed">
+    <link rel="webmention" href="https://webmention.io/maxfii.github.io/webmention" />
+  </head>
+  <body>
+    <header>
+  <a class="portrait" href="/">
+    <img width="80" height="80" alt="Jezen Thomas" src="/static/img/jgt.jpg" loading="lazy">
+  </a>
+  <h1 class="site-title">
+    <a href="/">Jezen Thomas</a>
+  </h1>
+  <p class="bio">
+    CTO &amp; Co-Founder at Supercede.
+  </p>
+</header>
+
+    <div id="main"><div class="container">
+  <article>
+    <h1 class="post-title">Free Internet on Trains</h1>
+    <div class="post-meta">
+      <p class="post-date">
+        May  7<sup>th</sup>, 2015
+        
+        | London, United Kingdom
+        
+      </p>
+    </div>
+    <p><span class="run-in"><span class="drop">O</span>n many public WiFi
+hotspots</span>, free access is limited to a certain amount of time per 24 hour
+period — usually an hour. In some cases, like on the cross-country trains in the
+UK, you are allowed 15 minutes(!) of gratis Internet access before being asked
+to pay an extortionate amount for continued surfing on a flaky-at-best
+connection.</p>
+<p>In many cases, these public hotspots identify your machine with its MAC address,
+so the simplest workaround is to change your MAC address. If you’re running OSX,
+you can use the following Bash function to switch to a new MAC address.
+Sometimes the script reuses the previous address, so you may have to keep
+running <code>remac</code> until a new address is output. Add this to your <code>.bashrc</code> or
+perhaps an <code>.aliases</code> file that you source when you start your shell.</p>
+<div class="highlight"><pre><span></span><span class="k">function</span><span class="w"> </span>remac<span class="w"> </span><span class="o">{</span>
+<span class="w">  </span>sudo<span class="w"> </span>/System/Library/PrivateFrameworks/Apple80211.framework/Resources/airport<span class="w"> </span>-z
+<span class="w">  </span>sudo<span class="w"> </span>ifconfig<span class="w"> </span>en0<span class="w"> </span>ether<span class="w"> </span><span class="k">$(</span>openssl<span class="w"> </span>rand<span class="w"> </span>-hex<span class="w"> </span><span class="m">6</span><span class="w"> </span><span class="p">|</span><span class="w"> </span>sed<span class="w"> </span><span class="s1">'s/\(..\)/\1:/g; s/.$//'</span><span class="k">)</span>
+<span class="w">  </span>sudo<span class="w"> </span>networksetup<span class="w"> </span>-detectnewhardware
+<span class="w">  </span><span class="nb">echo</span><span class="w"> </span><span class="k">$(</span>ifconfig<span class="w"> </span>en0<span class="w"> </span><span class="p">|</span><span class="w"> </span>grep<span class="w"> </span>ether<span class="k">)</span>
+<span class="o">}</span>
+</pre></div>
+
+<p><em>N.B.:</em> You will have to reconnect to the public hotspot after changing your MAC
+address. This is because the <code>remac</code> function needs to restart your WLAN card in
+order for the new MAC address to take effect.</p>
+<p>Some may argue that this is stealing. I would argue that Internet access ought
+to be a basic human right and charging for it like this is grossly unethical in
+the first place. The government provides free access to public libraries; why
+should the World’s largest and most well-connect library be any different.</p>
+
+    <br>
+    
+    <div class="body likes">
+        
+    </div>
+    
+    
+    <div class="body replies">
+        
+    </div>
+    
+    
+  </article>
+
+</div>
+</div>
+    <footer>&copy; 2025 Jezen Thomas</footer>
+
+
+    <script type="text/javascript">
+      [].slice.call(document.querySelectorAll('.footnote-ref sup')).forEach(function(el) {
+        var content = el.innerText;
+        el.innerText = '[' + content + ']';
+      })
+    </script>
+    <script type="text/javascript" src="https://www.htmlqa.com/send.js"></script>
+  </body>
+</html>

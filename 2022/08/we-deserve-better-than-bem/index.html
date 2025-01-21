@@ -1,0 +1,239 @@
+<!DOCTYPE html>
+<!--
+
+  [Please Enter New Password]
+
+  fortnight
+
+  [Error: Password is Two Week]
+
+-->
+<html lang="en">
+  <head>
+    <title>We Deserve Better Than BEM</title>
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+    <meta name="description" content="A simple approach to composing web page components using a compiler and a monadic action. It's easier than BEM, and it works better too.">
+    <meta name="author" content="Jezen Thomas">
+    <meta property="og:title" content="We Deserve Better Than BEM">
+    <meta property="og:description" content="A simple approach to composing web page components using a compiler and a monadic action. It's easier than BEM, and it works better too.">
+    <meta property="og:type" content="article">
+    <meta property="og:image" content="/static/img/conductor.jpg">
+    <meta property="og:site_name" content="Jezen Thomas">
+    <meta name="twitter:card" content="summary_large_image">
+    <meta property="twitter:domain" content="jezenthomas.com">
+    <meta name="twitter:title" content="We Deserve Better Than BEM">
+    <meta name="twitter:description" content="A simple approach to composing web page components using a compiler and a monadic action. It's easier than BEM, and it works better too.">
+    <meta name="twitter:image" content="/static/img/conductor.jpg">
+    <meta name="format-detection" content="telephone=no">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="icon" type="image/gif" href="/doom.gif">
+    <link rel="stylesheet" type="text/css" href="/css/35775f44348a64a19351c3e80ea2fa0a.css">
+    <link rel="alternate" type="application/rss+xml" href="/feed.xml" title="RSS feed">
+    <link rel="webmention" href="https://webmention.io/maxfii.github.io/webmention" />
+  </head>
+  <body>
+    <header>
+  <a class="portrait" href="/">
+    <img width="80" height="80" alt="Jezen Thomas" src="/static/img/jgt.jpg" loading="lazy">
+  </a>
+  <h1 class="site-title">
+    <a href="/">Jezen Thomas</a>
+  </h1>
+  <p class="bio">
+    CTO &amp; Co-Founder at Supercede.
+  </p>
+</header>
+
+    <div id="main"><div class="container">
+  <article>
+    <h1 class="post-title">We Deserve Better Than BEM</h1>
+    <div class="post-meta">
+      <p class="post-date">
+        August 24<sup>th</sup>, 2022
+        
+        | Odessa, Ukraine
+        
+      </p>
+    </div>
+    <p>The past decade has seen a number of CSS methodologies come and go in web
+development. The approach that seems to have become most widely adopted is
+called Block Element Modifier (BEM).</p>
+<p>BEM aims to make user interface code more manageable by ignoring the
+<em>cascading</em> part of Cascading Style Sheets, keeping the specificity of
+selectors low, and avoiding naming collisions. It does this by imposing a
+naming convention which programmers should rigidly adhere to.</p>
+<p>Applied BEM looks something like this:</p>
+<div class="highlight"><pre><span></span><span class="p">&lt;</span><span class="nt">header</span> <span class="na">class</span><span class="o">=</span><span class="s">&quot;header&quot;</span><span class="p">&gt;</span>
+  <span class="p">&lt;</span><span class="nt">img</span> <span class="na">class</span><span class="o">=</span><span class="s">&quot;header__logo header__logo--success&quot;</span> <span class="na">src</span><span class="o">=</span><span class="s">&quot;/slava_ukraini.jpg&quot;</span><span class="p">&gt;</span>
+<span class="p">&lt;/</span><span class="nt">header</span><span class="p">&gt;</span>
+
+<span class="p">&lt;</span><span class="nt">style</span><span class="p">&gt;</span>
+<span class="w">  </span><span class="p">.</span><span class="nc">header</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="k">background</span><span class="p">:</span><span class="w"> </span><span class="nb">linear-gradient</span><span class="p">(</span><span class="mi">-180</span><span class="kt">deg</span><span class="p">,</span><span class="w"> </span><span class="kc">royalblue</span><span class="w"> </span><span class="mi">50</span><span class="kt">%</span><span class="p">,</span><span class="w"> </span><span class="kc">yellow</span><span class="w"> </span><span class="mi">50</span><span class="kt">%</span><span class="p">);</span>
+<span class="w">  </span><span class="p">}</span>
+
+<span class="w">  </span><span class="p">.</span><span class="nc">header__logo--success</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="k">position</span><span class="p">:</span><span class="w"> </span><span class="kc">absolute</span><span class="p">;</span>
+<span class="w">  </span><span class="p">}</span>
+<span class="p">&lt;/</span><span class="nt">style</span><span class="p">&gt;</span>
+</pre></div>
+
+<p>The <em>block</em> in this case is <code>header</code>. We delimit the block and the <em>element</em>
+with a couple of underscores, and appending two hyphens and some string denotes
+a modifier.</p>
+<p>In practice, not only does this turn into a mess of punctuation, but this
+approach is also rather fragile.</p>
+<p>There’s nothing but human discipline to stop you from accidentally mistyping a
+selector, or inadvertently introducing a naming collision. When the visual
+design of your software changes and some markup is removed, there is nothing to
+indicate that the associated styles are now dead code and can safely be
+removed.</p>
+<p>Fundamentally, I don’t believe that relying on human discipline is a sensible
+way to scale a software project. We deserve better. Computers are perfectly
+capable of managing the relationships between components of a software system,
+whether that’s some markup and its associated styles and scripts, or classes
+and functions and the data types that flow between.</p>
+<p>The tools are available to us. We just need to use them.</p>
+<p>At Supercede we’re leveraging a technique which I think scales better than BEM.
+The technique is facilitated by Yesod which is the Haskell web framework that
+we use, but there’s no reason why this technique couldn’t be recreated in other
+frameworks.</p>
+<p>Approaching the previous <code>header</code> component in Yesod would look like this<a href="#fn1" class="footnote-ref" id="fnref1" role="doc-noteref"><sup>1</sup></a>:</p>
+<div class="highlight"><pre><span></span><span class="nf">header</span><span class="w"> </span><span class="ow">::</span><span class="w"> </span><span class="kt">Widget</span>
+<span class="nf">header</span><span class="w"> </span><span class="ow">=</span><span class="w"> </span><span class="kr">do</span>
+<span class="w">  </span><span class="n">theId</span><span class="w"> </span><span class="ow">&lt;-</span><span class="w"> </span><span class="n">newIdent</span>
+<span class="w">  </span><span class="p">[</span><span class="n">whamlet</span><span class="o">|</span>
+<span class="w">    </span><span class="o">&lt;</span><span class="n">header</span><span class="w"> </span><span class="n">id</span><span class="ow">=</span><span class="s">&quot;#{theId}&quot;</span><span class="o">&gt;</span>
+<span class="w">      </span><span class="o">&lt;</span><span class="n">img</span><span class="w"> </span><span class="kr">class</span><span class="ow">=</span><span class="s">&quot;logo success&quot;</span><span class="w"> </span><span class="n">src</span><span class="ow">=</span><span class="s">&quot;/slava_ukraini.jpg&quot;</span><span class="o">&gt;</span>
+<span class="w">  </span><span class="o">|</span><span class="p">]</span>
+<span class="w">  </span><span class="n">toWidget</span><span class="w"> </span><span class="p">[</span><span class="n">cassius</span><span class="o">|</span>
+<span class="w">    </span><span class="o">##</span><span class="p">{</span><span class="n">theId</span><span class="p">}</span>
+<span class="w">      </span><span class="n">background</span><span class="kt">:</span><span class="w"> </span><span class="n">linear</span><span class="o">-</span><span class="n">gradient</span><span class="p">(</span><span class="o">-</span><span class="mi">180</span><span class="n">deg</span><span class="p">,</span><span class="w"> </span><span class="n">royalblue</span><span class="w"> </span><span class="mi">50</span><span class="o">%</span><span class="p">,</span><span class="w"> </span><span class="n">yellow</span><span class="w"> </span><span class="mi">50</span><span class="o">%</span><span class="p">)</span>
+<span class="w">      </span><span class="o">.</span><span class="n">logo</span><span class="o">.</span><span class="n">success</span>
+<span class="w">        </span><span class="n">position</span><span class="kt">:</span><span class="w"> </span><span class="n">absolute</span>
+<span class="w">  </span><span class="o">|</span><span class="p">]</span>
+</pre></div>
+
+<p>The interesting part here is the use of <code>newIdent</code>. This is a monadic action
+which will bind <code>theId</code> to an identifier which is guaranteed to not collide
+with any other identifiers on the page which are generated the same way.</p>
+<p>This works by maintaining a counter in some request-specific internal state. At
+runtime when a request comes in and the application begins building up the page
+to serve to the user, every run of the <code>newIdent</code> action asks the state for the
+current count. The count is then incremented and stored back in the state, and
+the new count is used to generate a unique identifier.</p>
+<p>Composing a couple of widgets together illustrates this effect.</p>
+<div class="highlight"><pre><span></span><span class="nf">myWebPage</span><span class="w"> </span><span class="ow">::</span><span class="w"> </span><span class="kt">Widget</span>
+<span class="nf">myWebPage</span><span class="w"> </span><span class="ow">=</span><span class="w"> </span><span class="kr">do</span>
+<span class="w">  </span><span class="n">theId</span><span class="w"> </span><span class="ow">&lt;-</span><span class="w"> </span><span class="n">newIdent</span>
+<span class="w">  </span><span class="p">[</span><span class="n">whamlet</span><span class="o">|</span>
+<span class="w">    </span><span class="o">&lt;</span><span class="n">div</span><span class="w"> </span><span class="n">id</span><span class="ow">=</span><span class="s">&quot;#{theId}&quot;</span><span class="o">&gt;</span>
+<span class="w">      </span><span class="o">^</span><span class="p">{</span><span class="n">header</span><span class="p">}</span>
+<span class="w">      </span><span class="o">^</span><span class="p">{</span><span class="n">footer</span><span class="p">}</span>
+<span class="w">  </span><span class="o">|</span><span class="p">]</span>
+<span class="w">  </span><span class="n">toWidget</span><span class="w"> </span><span class="p">[</span><span class="n">cassius</span><span class="o">|</span>
+<span class="w">    </span><span class="o">##</span><span class="p">{</span><span class="n">theId</span><span class="p">}</span>
+<span class="w">      </span><span class="n">margin</span><span class="kt">:</span><span class="w"> </span><span class="n">auto</span>
+<span class="w">  </span><span class="o">|</span><span class="p">]</span>
+
+<span class="w">  </span><span class="kr">where</span>
+
+<span class="w">  </span><span class="n">header</span><span class="w"> </span><span class="ow">::</span><span class="w"> </span><span class="kt">Widget</span>
+<span class="w">  </span><span class="n">header</span><span class="w"> </span><span class="ow">=</span><span class="w"> </span><span class="kr">do</span>
+<span class="w">    </span><span class="n">theId</span><span class="w"> </span><span class="ow">&lt;-</span><span class="w"> </span><span class="n">newIdent</span>
+<span class="w">    </span><span class="p">[</span><span class="n">whamlet</span><span class="o">|</span>
+<span class="w">      </span><span class="o">&lt;</span><span class="n">header</span><span class="w"> </span><span class="n">id</span><span class="ow">=</span><span class="s">&quot;#{theId}&quot;</span><span class="o">&gt;</span><span class="kt">Some</span><span class="w"> </span><span class="n">header</span><span class="w"> </span><span class="n">text</span><span class="err">…</span>
+<span class="w">    </span><span class="o">|</span><span class="p">]</span>
+<span class="w">    </span><span class="n">toWidget</span><span class="w"> </span><span class="p">[</span><span class="n">cassius</span><span class="o">|</span>
+<span class="w">      </span><span class="o">##</span><span class="p">{</span><span class="n">theId</span><span class="p">}</span>
+<span class="w">        </span><span class="n">background</span><span class="kt">:</span><span class="w"> </span><span class="n">royalblue</span>
+<span class="w">    </span><span class="o">|</span><span class="p">]</span>
+
+<span class="w">  </span><span class="n">footer</span><span class="w"> </span><span class="ow">::</span><span class="w"> </span><span class="kt">Widget</span>
+<span class="w">  </span><span class="n">footer</span><span class="w"> </span><span class="ow">=</span><span class="w"> </span><span class="kr">do</span>
+<span class="w">    </span><span class="n">theId</span><span class="w"> </span><span class="ow">&lt;-</span><span class="w"> </span><span class="n">newIdent</span>
+<span class="w">    </span><span class="p">[</span><span class="n">whamlet</span><span class="o">|</span>
+<span class="w">      </span><span class="o">&lt;</span><span class="n">footer</span><span class="w"> </span><span class="n">id</span><span class="ow">=</span><span class="s">&quot;#{theId}&quot;</span><span class="o">&gt;&amp;</span><span class="n">copy</span><span class="p">;</span><span class="w"> </span><span class="kt">Copyright</span><span class="w"> </span><span class="kt">Acme</span><span class="w"> </span><span class="kt">Inc</span><span class="o">.</span><span class="w"> </span><span class="mi">2022</span>
+<span class="w">    </span><span class="o">|</span><span class="p">]</span>
+<span class="w">    </span><span class="n">toWidget</span><span class="w"> </span><span class="p">[</span><span class="n">cassius</span><span class="o">|</span>
+<span class="w">      </span><span class="o">##</span><span class="p">{</span><span class="n">theId</span><span class="p">}</span>
+<span class="w">        </span><span class="n">background</span><span class="kt">:</span><span class="w"> </span><span class="n">yellow</span>
+<span class="w">    </span><span class="o">|</span><span class="p">]</span>
+</pre></div>
+
+<p>This Haskell code generates markup and styles which look like this:</p>
+<div class="highlight"><pre><span></span><span class="p">&lt;</span><span class="nt">div</span> <span class="na">id</span><span class="o">=</span><span class="s">&quot;hident3&quot;</span><span class="p">&gt;</span>
+  <span class="p">&lt;</span><span class="nt">header</span> <span class="na">id</span><span class="o">=</span><span class="s">&quot;hident1&quot;</span><span class="p">&gt;</span>Some header text…<span class="p">&lt;/</span><span class="nt">header</span><span class="p">&gt;</span>
+  <span class="p">&lt;</span><span class="nt">footer</span> <span class="na">id</span><span class="o">=</span><span class="s">&quot;hident2&quot;</span><span class="p">&gt;</span><span class="ni">&amp;copy;</span> Copyright Acme Inc. 2022<span class="p">&lt;/</span><span class="nt">footer</span><span class="p">&gt;</span>
+<span class="p">&lt;/</span><span class="nt">div</span><span class="p">&gt;</span>
+
+<span class="p">&lt;</span><span class="nt">style</span><span class="p">&gt;</span>
+<span class="w">  </span><span class="p">#</span><span class="nn">hident1</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="k">background</span><span class="p">:</span><span class="w"> </span><span class="kc">royalblue</span><span class="p">;</span><span class="w"> </span><span class="p">}</span>
+<span class="w">  </span><span class="p">#</span><span class="nn">hident2</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="k">background</span><span class="p">:</span><span class="w"> </span><span class="kc">yellow</span><span class="p">;</span><span class="w"> </span><span class="p">}</span>
+<span class="w">  </span><span class="p">#</span><span class="nn">hident3</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="k">margin</span><span class="p">:</span><span class="w"> </span><span class="kc">auto</span><span class="p">;</span><span class="w"> </span><span class="p">}</span>
+<span class="p">&lt;/</span><span class="nt">style</span><span class="p">&gt;</span>
+</pre></div>
+
+<p>So, correct use of the framework ensures our IDs are unique even when they’re
+all composed together, and the compiler ensures we don’t mistype the names that
+bind the HTML elements with their associated CSS and JavaScript. The compiler
+also helps us clean up dead code along the way.</p>
+<p>Ordinarily you might feel uncomfortable using a name as nondescriptive as
+<code>theId</code>, but in practice we tend to only use one unique identifier per widget.
+Each binding is scoped to its respective widget, and the name
+doesn’t appear verbatim in the generated HTML, CSS, or JavaScript.</p>
+<p>This approach also allows us to improve the <em>locality</em> of the code. Associated
+markup, styles, and scripts can all be written in adjacent code which makes the
+writing process less cumbersome.</p>
+<p>Because naming collisions are prevented by the application, we’re free to embrace
+specificity in CSS and just use IDs everywhere instead of limiting ourselves
+to classes. Relying on IDs in web development is usually avoided because
+they’re hard to manage manually at scale, but this pain goes away if you can
+delegate that management to a sufficiently sophisticated mechanism.</p>
+<p>Widget composition is one of the unsung heroes of the Yesod framework. Given
+that the framework is written in Haskell, I think people are often more
+interested in talking about exotic-sounding ideas like <em>zygohistomorphic
+prepromorphisms</em>, but the truth is that more basic concepts make up the vast
+majority of web development work, so those are the areas we should be focusing
+on. The composition of widgets and their associated styles and scripts is
+exactly one of those areas.</p>
+<p>I’ve found that the more responsibility I delegate away from humans and into
+the compiler, the fewer mistakes I tend to see in production. The mechanisms
+I’ve described here aren’t exactly new either — they’ve existed in Yesod for
+more than a decade. If your web framework of choice doesn’t have something like
+this, you should be asking yourself an important question: <em>Why not?</em></p>
+<section id="footnotes" class="footnotes footnotes-end-of-document" role="doc-endnotes">
+<hr />
+<ol>
+<li id="fn1"><p>Actually, it’s more typical to use <a href="https://www.yesodweb.com/book/shakespearean-templates#shakespearean-templates_attributes">syntactical conveniences</a> that Hamlet provides. The verbose version is used here so there is less unfamiliar syntax for the reader.<a href="#fnref1" class="footnote-back" role="doc-backlink">↩︎</a></p></li>
+</ol>
+</section>
+
+    <br>
+    
+    <div class="body likes">
+        
+    </div>
+    
+    
+    <div class="body replies">
+        
+    </div>
+    
+    
+  </article>
+
+</div>
+</div>
+    <footer>&copy; 2025 Jezen Thomas</footer>
+
+
+    <script type="text/javascript">
+      [].slice.call(document.querySelectorAll('.footnote-ref sup')).forEach(function(el) {
+        var content = el.innerText;
+        el.innerText = '[' + content + ']';
+      })
+    </script>
+    <script type="text/javascript" src="https://www.htmlqa.com/send.js"></script>
+  </body>
+</html>

@@ -1,0 +1,187 @@
+<!DOCTYPE html>
+<!--
+
+  [Please Enter New Password]
+
+  fortnight
+
+  [Error: Password is Two Week]
+
+-->
+<html lang="en">
+  <head>
+    <title>Yesod Forms, Newtypes, and Smart Constructors</title>
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+    <meta name="description" content="Yesod form fields operate on primitive types, but you'll want to narrow those types into something more meaningful. Here are a couple of functions you'll need to achieve that.">
+    <meta name="author" content="Jezen Thomas">
+    <meta property="og:title" content="Yesod Forms, Newtypes, and Smart Constructors">
+    <meta property="og:description" content="Yesod form fields operate on primitive types, but you'll want to narrow those types into something more meaningful. Here are a couple of functions you'll need to achieve that.">
+    <meta property="og:type" content="article">
+    <meta property="og:image" content="/static/img/yesod-forms-newtypes-and-smart-constructors.jpg">
+    <meta property="og:site_name" content="Jezen Thomas">
+    <meta name="twitter:card" content="summary_large_image">
+    <meta property="twitter:domain" content="jezenthomas.com">
+    <meta name="twitter:title" content="Yesod Forms, Newtypes, and Smart Constructors">
+    <meta name="twitter:description" content="Yesod form fields operate on primitive types, but you'll want to narrow those types into something more meaningful. Here are a couple of functions you'll need to achieve that.">
+    <meta name="twitter:image" content="/static/img/yesod-forms-newtypes-and-smart-constructors.jpg">
+    <meta name="format-detection" content="telephone=no">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="icon" type="image/gif" href="/doom.gif">
+    <link rel="stylesheet" type="text/css" href="/css/35775f44348a64a19351c3e80ea2fa0a.css">
+    <link rel="alternate" type="application/rss+xml" href="/feed.xml" title="RSS feed">
+    <link rel="webmention" href="https://webmention.io/maxfii.github.io/webmention" />
+  </head>
+  <body>
+    <header>
+  <a class="portrait" href="/">
+    <img width="80" height="80" alt="Jezen Thomas" src="/static/img/jgt.jpg" loading="lazy">
+  </a>
+  <h1 class="site-title">
+    <a href="/">Jezen Thomas</a>
+  </h1>
+  <p class="bio">
+    CTO &amp; Co-Founder at Supercede.
+  </p>
+</header>
+
+    <div id="main"><div class="container">
+  <article>
+    <h1 class="post-title">Yesod Forms, Newtypes, and Smart Constructors</h1>
+    <div class="post-meta">
+      <p class="post-date">
+        June 14<sup>th</sup>, 2023
+        
+        | Łódź, Poland
+        
+      </p>
+    </div>
+    <p>Say we’re writing a web application, and we’re modelling a login form.</p>
+<p>If the types in your system are primitive, you don’t need to do much to parse
+them from values outside your system boundary, <em>i.e.</em>, those submitted by a
+user through a web form.</p>
+<p>It’s easy enough to use a <code>textField</code> for each field in our login form.</p>
+<div class="highlight"><pre><span></span><span class="c1">-- Assume this type synonym exists for all examples in this article</span>
+<span class="kr">type</span><span class="w"> </span><span class="kt">Form</span><span class="w"> </span><span class="n">x</span><span class="w"> </span><span class="ow">=</span><span class="w"> </span><span class="kt">Html</span><span class="w"> </span><span class="ow">-&gt;</span><span class="w"> </span><span class="kt">MForm</span><span class="w"> </span><span class="p">(</span><span class="kt">HandlerFor</span><span class="w"> </span><span class="kt">App</span><span class="p">)</span><span class="w"> </span><span class="p">(</span><span class="kt">FormResult</span><span class="w"> </span><span class="n">x</span><span class="p">,</span><span class="w"> </span><span class="kt">Widget</span><span class="p">)</span>
+
+<span class="c1">-- A login form with a single field</span>
+<span class="kr">data</span><span class="w"> </span><span class="kt">LoginForm</span><span class="w"> </span><span class="ow">=</span><span class="w"> </span><span class="kt">LoginForm</span>
+<span class="w">  </span><span class="p">{</span><span class="w"> </span><span class="n">loginFormEmail</span><span class="w"> </span><span class="ow">::</span><span class="w"> </span><span class="kt">Text</span>
+<span class="w">  </span><span class="p">}</span>
+
+<span class="nf">loginForm</span><span class="w"> </span><span class="ow">::</span><span class="w"> </span><span class="kt">Form</span><span class="w"> </span><span class="kt">LoginForm</span>
+<span class="nf">loginForm</span><span class="w"> </span><span class="n">extra</span><span class="w"> </span><span class="ow">=</span><span class="w">  </span><span class="kr">do</span>
+<span class="w">  </span><span class="n">email</span><span class="w"> </span><span class="ow">&lt;-</span><span class="w"> </span><span class="n">mreq</span><span class="w"> </span><span class="n">textField</span><span class="w"> </span><span class="s">&quot;&quot;</span><span class="w"> </span><span class="kt">Nothing</span>
+<span class="w">  </span><span class="n">pure</span><span class="w"> </span><span class="p">(</span><span class="kt">LoginForm</span><span class="w"> </span><span class="o">&lt;$&gt;</span><span class="w"> </span><span class="n">fst</span><span class="w"> </span><span class="n">email</span><span class="p">,</span><span class="w"> </span><span class="o">$</span><span class="p">(</span><span class="n">widgetFile</span><span class="w"> </span><span class="s">&quot;login&quot;</span><span class="p">))</span>
+</pre></div>
+
+<p>No surprises here.</p>
+<h2 id="with-newtypes">With Newtypes</h2>
+<p>What if our types aren’t exactly <code>Text</code> values, but are some kind of
+equivalent type? For example, what if we’re representing our email value with a
+newtype which wraps the underlying text value?</p>
+<p>In Yesod, a <code>Field</code> cannot be a functor so it’s not obvious how to reuse a
+<code>textField</code> and make it produce an <code>Email</code> value instead.</p>
+<p>Fortunately, Yesod’s <a href="https://hackage.haskell.org/package/yesod-form">form library</a> provides <a href="https://hackage.haskell.org/package/yesod-form-1.7.4/docs/Yesod-Form-Functions.html#v:convertField"><code>convertField</code></a> to handle
+this case. You apply this function to a couple of functions for converting to
+and from your newtype, and a form field you wish to wrap.</p>
+<div class="highlight"><pre><span></span><span class="kr">newtype</span><span class="w"> </span><span class="kt">Email</span><span class="w"> </span><span class="ow">=</span><span class="w"> </span><span class="kt">Email</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="n">unEmail</span><span class="w"> </span><span class="ow">::</span><span class="w"> </span><span class="kt">Text</span><span class="w"> </span><span class="p">}</span>
+
+<span class="kr">data</span><span class="w"> </span><span class="kt">LoginForm</span><span class="w"> </span><span class="ow">=</span><span class="w"> </span><span class="kt">LoginForm</span>
+<span class="w">  </span><span class="p">{</span><span class="w"> </span><span class="n">loginFormEmail</span><span class="w"> </span><span class="ow">::</span><span class="w"> </span><span class="kt">Email</span>
+<span class="w">  </span><span class="p">}</span>
+
+<span class="nf">loginForm</span><span class="w"> </span><span class="ow">::</span><span class="w"> </span><span class="kt">Form</span><span class="w"> </span><span class="kt">LoginForm</span>
+<span class="nf">loginForm</span><span class="w"> </span><span class="n">extra</span><span class="w"> </span><span class="ow">=</span><span class="w">  </span><span class="kr">do</span>
+<span class="w">  </span><span class="n">email</span><span class="w"> </span><span class="ow">&lt;-</span><span class="w"> </span><span class="n">mreq</span><span class="w"> </span><span class="p">(</span><span class="n">convertField</span><span class="w"> </span><span class="kt">Email</span><span class="w"> </span><span class="n">unEmail</span><span class="w"> </span><span class="n">textField</span><span class="p">)</span><span class="w"> </span><span class="s">&quot;&quot;</span><span class="w"> </span><span class="kt">Nothing</span>
+<span class="w">  </span><span class="n">pure</span><span class="w"> </span><span class="p">(</span><span class="kt">LoginForm</span><span class="w"> </span><span class="o">&lt;$&gt;</span><span class="w"> </span><span class="n">fst</span><span class="w"> </span><span class="n">email</span><span class="p">,</span><span class="w"> </span><span class="o">$</span><span class="p">(</span><span class="n">widgetFile</span><span class="w"> </span><span class="s">&quot;login&quot;</span><span class="p">))</span>
+</pre></div>
+
+<h2 id="with-smart-constructors">With Smart Constructors</h2>
+<p>Newtype wrappers are better than working directly with primitive types, but by
+themselves they don’t provide a great deal of type safety because the wrapped
+data isn’t any more constrained than when it’s unwrapped.</p>
+<p>To solve that, we would reach for a <a href="https://kowainik.github.io/posts/haskell-mini-patterns#smart-constructor">smart constructor</a>.</p>
+<div class="highlight"><pre><span></span><span class="c1">-- Explicitly exclude the value constructor</span>
+<span class="kr">module</span><span class="w"> </span><span class="nn">Email</span><span class="w"> </span><span class="p">(</span><span class="kt">Email</span><span class="p">,</span><span class="w"> </span><span class="nf">unEmail</span><span class="p">,</span><span class="w"> </span><span class="nf">email</span><span class="p">)</span><span class="w"> </span><span class="kr">where</span>
+
+<span class="c1">-- The newtype wrapper without a record field</span>
+<span class="kr">newtype</span><span class="w"> </span><span class="kt">Email</span><span class="w"> </span><span class="ow">=</span><span class="w"> </span><span class="kt">Email</span><span class="w"> </span><span class="kt">Text</span>
+
+<span class="c1">-- Unwrap the newtype</span>
+<span class="nf">unEmail</span><span class="w"> </span><span class="ow">::</span><span class="w"> </span><span class="kt">Email</span><span class="w"> </span><span class="ow">-&gt;</span><span class="w"> </span><span class="kt">Text</span>
+<span class="nf">unEmail</span><span class="w"> </span><span class="p">(</span><span class="kt">Email</span><span class="w"> </span><span class="n">email</span><span class="p">)</span><span class="w"> </span><span class="ow">=</span><span class="w"> </span><span class="n">email</span>
+
+<span class="c1">-- The smart constructor</span>
+<span class="nf">email</span><span class="w"> </span><span class="ow">::</span><span class="w"> </span><span class="kt">Text</span><span class="w"> </span><span class="ow">-&gt;</span><span class="w"> </span><span class="kt">Maybe</span><span class="w"> </span><span class="kt">Email</span>
+<span class="nf">email</span><span class="w"> </span><span class="n">t</span>
+<span class="w">  </span><span class="o">|</span><span class="w"> </span><span class="s">&quot;@&quot;</span><span class="w"> </span><span class="p">`</span><span class="n">isInfixOf</span><span class="p">`</span><span class="w"> </span><span class="n">t</span><span class="w"> </span><span class="ow">=</span><span class="w"> </span><span class="kt">Just</span><span class="w"> </span><span class="p">(</span><span class="kt">Email</span><span class="w"> </span><span class="n">t</span><span class="p">)</span>
+<span class="w">  </span><span class="o">|</span><span class="w"> </span><span class="n">otherwise</span><span class="w"> </span><span class="ow">=</span><span class="w"> </span><span class="kt">Nothing</span>
+</pre></div>
+
+<p>What if we’re using the smart constructor pattern and our newtypes can’t be
+naïvely constructed? We can’t use <code>convertField</code> because the types won’t line
+up.</p>
+<p>Again, Yesod conveniently provides <a href="https://hackage.haskell.org/package/yesod-form-1.7.4/docs/Yesod-Form-Functions.html#v:checkMMap"><code>checkMMap</code></a> for transforming some
+existing field into one that both performs validation <em>and</em> converts the
+datatype. This way we can use our smart constructor in the field directly
+instead of having to define validation rules in two places.</p>
+<p>This function wants to ultimately produce an <code>Either msg b</code> but our smart
+constructor only produces a <code>Maybe b</code>. We can use the <a href="https://hackage.haskell.org/package/errors-2.3.0/docs/Control-Error-Util.html#v:note"><code>note</code></a> function to
+promote it and provide a friendly error message.</p>
+<div class="highlight"><pre><span></span><span class="kr">module</span><span class="w"> </span><span class="nn">Main</span><span class="w"> </span><span class="kr">where</span>
+
+<span class="kr">import</span><span class="w"> </span><span class="nn">Email</span>
+
+<span class="kr">data</span><span class="w"> </span><span class="kt">LoginForm</span><span class="w"> </span><span class="ow">=</span><span class="w"> </span><span class="kt">LoginForm</span>
+<span class="w">  </span><span class="p">{</span><span class="w"> </span><span class="n">loginFormEmail</span><span class="w"> </span><span class="ow">::</span><span class="w"> </span><span class="kt">Email</span>
+<span class="w">  </span><span class="p">}</span>
+
+<span class="nf">loginForm</span><span class="w"> </span><span class="ow">::</span><span class="w"> </span><span class="kt">Form</span><span class="w"> </span><span class="kt">LoginForm</span>
+<span class="nf">loginForm</span><span class="w"> </span><span class="n">extra</span><span class="w"> </span><span class="ow">=</span><span class="w"> </span><span class="kr">do</span>
+<span class="w">  </span><span class="n">email</span><span class="w"> </span><span class="ow">&lt;-</span>
+<span class="w">    </span><span class="kr">let</span><span class="w"> </span><span class="n">msg</span><span class="w"> </span><span class="ow">=</span><span class="w"> </span><span class="n">asText</span><span class="w"> </span><span class="s">&quot;Invalid email&quot;</span>
+<span class="w">        </span><span class="n">checkEmail</span><span class="w"> </span><span class="ow">=</span><span class="w"> </span><span class="n">pure</span><span class="w"> </span><span class="o">.</span><span class="w"> </span><span class="n">note</span><span class="w"> </span><span class="n">msg</span><span class="w"> </span><span class="o">.</span><span class="w"> </span><span class="n">email</span>
+<span class="w">     </span><span class="kr">in</span><span class="w"> </span><span class="n">mreq</span><span class="w"> </span><span class="p">(</span><span class="n">checkMMap</span><span class="w"> </span><span class="n">checkEmail</span><span class="w"> </span><span class="n">unEmail</span><span class="w"> </span><span class="n">textField</span><span class="p">)</span><span class="w"> </span><span class="s">&quot;&quot;</span><span class="w"> </span><span class="kt">Nothing</span>
+<span class="w">  </span><span class="n">pure</span><span class="w"> </span><span class="p">(</span><span class="kt">LoginForm</span><span class="w"> </span><span class="o">&lt;$&gt;</span><span class="w"> </span><span class="n">fst</span><span class="w"> </span><span class="n">email</span><span class="p">,</span><span class="w"> </span><span class="o">$</span><span class="p">(</span><span class="n">widgetFile</span><span class="w"> </span><span class="s">&quot;login&quot;</span><span class="p">))</span>
+</pre></div>
+
+<p>Since <code>checkMMap</code> runs in the <code>Handler</code> monad, you can also run IO actions or
+database transactions as part of the validation step. For example, you could
+query the database and check that the email address you’re trying to log in
+with actually exists.</p>
+<p>If you want a little more assurance, it might be worth writing a property-based
+test which asserts that your functions to convert to and from your newtype
+successfully <a href="https://hedgehog.qa/article/haskell-round-trip">roundtrip</a>.</p>
+<p>Yesod’s form library is actually pretty powerful and satisying. It could
+perhaps do with more examples of what good looks like, and hopefully this short
+article helps. I’ve found that my code is generally neater when I’m able to
+manage parsing/validation together at the web form level.</p>
+
+    <br>
+    
+    <div class="body likes">
+        
+    </div>
+    
+    
+    <div class="body replies">
+        
+    </div>
+    
+    
+  </article>
+
+</div>
+</div>
+    <footer>&copy; 2025 Jezen Thomas</footer>
+
+
+    <script type="text/javascript">
+      [].slice.call(document.querySelectorAll('.footnote-ref sup')).forEach(function(el) {
+        var content = el.innerText;
+        el.innerText = '[' + content + ']';
+      })
+    </script>
+    <script type="text/javascript" src="https://www.htmlqa.com/send.js"></script>
+  </body>
+</html>

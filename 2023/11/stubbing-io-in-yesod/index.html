@@ -1,0 +1,211 @@
+<!DOCTYPE html>
+<!--
+
+  [Please Enter New Password]
+
+  fortnight
+
+  [Error: Password is Two Week]
+
+-->
+<html lang="en">
+  <head>
+    <title>Stubbing I/O in Yesod</title>
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+    <meta name="description" content="An easy way to stub I/O actions in Yesod request handler code with dependency injection.">
+    <meta name="author" content="Jezen Thomas">
+    <meta property="og:title" content="Stubbing I/O in Yesod">
+    <meta property="og:description" content="An easy way to stub I/O actions in Yesod request handler code with dependency injection.">
+    <meta property="og:type" content="article">
+    <meta property="og:image" content="/static/img/stubbing-io-in-yesod.jpg">
+    <meta property="og:site_name" content="Jezen Thomas">
+    <meta name="twitter:card" content="summary_large_image">
+    <meta property="twitter:domain" content="jezenthomas.com">
+    <meta name="twitter:title" content="Stubbing I/O in Yesod">
+    <meta name="twitter:description" content="An easy way to stub I/O actions in Yesod request handler code with dependency injection.">
+    <meta name="twitter:image" content="/static/img/stubbing-io-in-yesod.jpg">
+    <meta name="format-detection" content="telephone=no">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="icon" type="image/gif" href="/doom.gif">
+    <link rel="stylesheet" type="text/css" href="/css/35775f44348a64a19351c3e80ea2fa0a.css">
+    <link rel="alternate" type="application/rss+xml" href="/feed.xml" title="RSS feed">
+    <link rel="webmention" href="https://webmention.io/maxfii.github.io/webmention" />
+  </head>
+  <body>
+    <header>
+  <a class="portrait" href="/">
+    <img width="80" height="80" alt="Jezen Thomas" src="/static/img/jgt.jpg" loading="lazy">
+  </a>
+  <h1 class="site-title">
+    <a href="/">Jezen Thomas</a>
+  </h1>
+  <p class="bio">
+    CTO &amp; Co-Founder at Supercede.
+  </p>
+</header>
+
+    <div id="main"><div class="container">
+  <article>
+    <h1 class="post-title">Stubbing I/O in Yesod</h1>
+    <div class="post-meta">
+      <p class="post-date">
+        November  5<sup>th</sup>, 2023
+        
+        | Kaş, Türkiye
+        
+      </p>
+    </div>
+    <p>Here’s the scenario.</p>
+<p>You’re writing a web application in Yesod. In one of your request handler
+functions, you need to run some IO action. This might be to make an HTTP
+request against an online weather service, or this might be to charge someone’s
+credit card, or even just to generate some random number.</p>
+<p>Taking the latter as an example, imagine we want to generate a random number
+and then respond to the user’s request by reporting whether the randomly
+generated number is even or odd.</p>
+<p>We might write code which looks like this.</p>
+<div class="highlight"><pre><span></span><span class="cm">{-# LANGUAGE OverloadedStrings #-}</span>
+<span class="cm">{-# LANGUAGE QuasiQuotes #-}</span>
+<span class="cm">{-# LANGUAGE TemplateHaskell #-}</span>
+<span class="cm">{-# LANGUAGE TypeFamilies #-}</span>
+
+<span class="kr">module</span><span class="w"> </span><span class="nn">Application</span><span class="w"> </span><span class="kr">where</span>
+
+<span class="kr">import</span><span class="w"> </span><span class="nn">System.Random</span>
+<span class="kr">import</span><span class="w"> </span><span class="nn">Yesod</span>
+
+<span class="kr">data</span><span class="w"> </span><span class="kt">App</span><span class="w"> </span><span class="ow">=</span><span class="w"> </span><span class="kt">App</span>
+
+<span class="nf">mkYesod</span><span class="w"> </span><span class="s">&quot;App&quot;</span><span class="w"> </span><span class="p">[</span><span class="n">parseRoutes</span><span class="o">|</span>
+<span class="o">/</span><span class="n">random</span><span class="w"> </span><span class="kt">RandomR</span><span class="w"> </span><span class="kt">GET</span>
+<span class="o">|</span><span class="p">]</span>
+
+<span class="kr">instance</span><span class="w"> </span><span class="kt">Yesod</span><span class="w"> </span><span class="kt">App</span>
+
+<span class="nf">getRandomR</span><span class="w"> </span><span class="ow">::</span><span class="w"> </span><span class="kt">Handler</span><span class="w"> </span><span class="kt">Value</span>
+<span class="nf">getRandomR</span><span class="w"> </span><span class="ow">=</span><span class="w"> </span><span class="kr">do</span>
+<span class="w">  </span><span class="n">n</span><span class="w"> </span><span class="ow">&lt;-</span><span class="w"> </span><span class="n">liftIO</span><span class="w"> </span><span class="n">randomNumber</span>
+<span class="w">  </span><span class="n">returnJson</span><span class="w"> </span><span class="o">$</span><span class="w"> </span><span class="n">isEven</span><span class="w"> </span><span class="n">n</span>
+<span class="w">  </span><span class="kr">where</span>
+<span class="w">    </span><span class="n">randomNumber</span><span class="w"> </span><span class="ow">::</span><span class="w"> </span><span class="kt">IO</span><span class="w"> </span><span class="kt">Int</span>
+<span class="w">    </span><span class="n">randomNumber</span><span class="w"> </span><span class="ow">=</span><span class="w"> </span><span class="n">randomRIO</span><span class="w"> </span><span class="p">(</span><span class="mi">1</span><span class="p">,</span><span class="w"> </span><span class="mi">100</span><span class="p">)</span>
+
+<span class="w">    </span><span class="n">isEven</span><span class="w"> </span><span class="ow">::</span><span class="w"> </span><span class="kt">Int</span><span class="w"> </span><span class="ow">-&gt;</span><span class="w"> </span><span class="kt">String</span>
+<span class="w">    </span><span class="n">isEven</span><span class="w"> </span><span class="n">n</span><span class="w"> </span><span class="ow">=</span><span class="w"> </span><span class="kr">if</span><span class="w"> </span><span class="n">even</span><span class="w"> </span><span class="n">n</span><span class="w"> </span><span class="kr">then</span><span class="w"> </span><span class="s">&quot;even&quot;</span><span class="w"> </span><span class="kr">else</span><span class="w"> </span><span class="s">&quot;odd&quot;</span>
+
+<span class="nf">main</span><span class="w"> </span><span class="ow">::</span><span class="w"> </span><span class="kt">IO</span><span class="w"> </span><span class="nb">()</span>
+<span class="nf">main</span><span class="w"> </span><span class="ow">=</span><span class="w"> </span><span class="n">warp</span><span class="w"> </span><span class="mi">3000</span><span class="w"> </span><span class="kt">App</span>
+</pre></div>
+
+<p>This is a complete Yesod application. We can run this locally and it will be
+listening for requests on port 3000. When we send requests there, we can see
+our application dutifully responding with whether or not the randomly generated
+number was even or odd.</p>
+<div class="highlight"><pre><span></span>$<span class="w"> </span>curl<span class="w"> </span>http://localhost:3000/random
+<span class="s2">&quot;even&quot;</span>
+
+$<span class="w"> </span>curl<span class="w"> </span>http://localhost:3000/random
+<span class="s2">&quot;odd&quot;</span>
+</pre></div>
+
+<p>This is all well and good, but how do we write an automated test for this? We
+can’t control the randomness of our pseudo-random number generator. Similarly,
+if instead of generating a random number this were an HTTP request to attempt
+to charge someone’s credit card with some payment provider, <em>e.g.</em>, Stripe,
+then we wouldn’t be able to write a reliable automated test for this because we
+don’t control Stripe’s servers.</p>
+<p>What we need to do is to <em>stub</em> out this IO action. This means that instead of
+running the real implementation during the test, we swap it out for a fake
+version that we <em>can</em> control.</p>
+<p>One simple approach for this is with <em>dependency injection</em>.</p>
+<p>Instead of defining our <code>randomNumber</code> function alongside our request handler,
+we can declare it as part of our application’s foundational data type.</p>
+<div class="highlight"><pre><span></span><span class="kr">data</span><span class="w"> </span><span class="kt">App</span><span class="w"> </span><span class="ow">=</span><span class="w"> </span><span class="kt">App</span>
+<span class="w">  </span><span class="p">{</span><span class="w"> </span><span class="n">appRandomNumber</span><span class="w"> </span><span class="ow">::</span><span class="w"> </span><span class="kt">IO</span><span class="w"> </span><span class="kt">Int</span>
+<span class="w">  </span><span class="p">}</span>
+</pre></div>
+
+<p>When we initialise our application, we construct our <code>App</code> value with the real
+implementation of our function.</p>
+<div class="highlight"><pre><span></span><span class="nf">main</span><span class="w"> </span><span class="ow">::</span><span class="w"> </span><span class="kt">IO</span><span class="w"> </span><span class="nb">()</span>
+<span class="nf">main</span><span class="w"> </span><span class="ow">=</span><span class="w"> </span><span class="n">warp</span><span class="w"> </span><span class="mi">3000</span><span class="w"> </span><span class="o">$</span><span class="w"> </span><span class="kt">App</span><span class="w"> </span><span class="n">randomNumber</span>
+<span class="w">  </span><span class="kr">where</span>
+<span class="w">    </span><span class="n">randomNumber</span><span class="w"> </span><span class="ow">=</span><span class="w"> </span><span class="c1">-- real implementation</span>
+</pre></div>
+
+<p>Since our <code>randomNumber</code> function is no longer defined alongside our request
+handler, we’ll now need to ask for that function from within the handler
+instead.</p>
+<div class="highlight"><pre><span></span><span class="nf">getRandomR</span><span class="w"> </span><span class="ow">::</span><span class="w"> </span><span class="kt">Handler</span><span class="w"> </span><span class="kt">Value</span>
+<span class="nf">getRandomR</span><span class="w"> </span><span class="ow">=</span><span class="w"> </span><span class="kr">do</span>
+<span class="w">  </span><span class="n">n</span><span class="w"> </span><span class="ow">&lt;-</span><span class="w"> </span><span class="n">liftIO</span><span class="w"> </span><span class="o">=&lt;&lt;</span><span class="w"> </span><span class="n">getsYesod</span><span class="w"> </span><span class="n">appRandomNumber</span>
+<span class="w">  </span><span class="n">returnJson</span><span class="w"> </span><span class="o">$</span><span class="w"> </span><span class="n">isEven</span><span class="w"> </span><span class="n">n</span>
+<span class="w">  </span><span class="kr">where</span>
+<span class="w">    </span><span class="n">isEven</span><span class="w"> </span><span class="ow">::</span><span class="w"> </span><span class="kt">Int</span><span class="w"> </span><span class="ow">-&gt;</span><span class="w"> </span><span class="kt">String</span>
+<span class="w">    </span><span class="n">isEven</span><span class="w"> </span><span class="n">n</span><span class="w"> </span><span class="ow">=</span><span class="w"> </span><span class="c1">-- …</span>
+</pre></div>
+
+<p>This behaves exactly as it did before, but now we’re able to swap out our
+<code>randomNumber</code> function for a fake version in an automated test with
+<code>testModifySite</code>.</p>
+<div class="highlight"><pre><span></span><span class="nf">withApp</span><span class="w"> </span><span class="ow">::</span><span class="w"> </span><span class="kt">SpecWith</span><span class="w"> </span><span class="p">(</span><span class="kt">TestApp</span><span class="w"> </span><span class="kt">App</span><span class="p">)</span><span class="w"> </span><span class="ow">-&gt;</span><span class="w"> </span><span class="kt">Spec</span>
+<span class="nf">withApp</span><span class="w"> </span><span class="ow">=</span><span class="w"> </span><span class="n">before</span><span class="w"> </span><span class="o">$</span><span class="w"> </span><span class="kr">do</span>
+<span class="w">  </span><span class="n">pure</span><span class="w"> </span><span class="p">(</span><span class="kt">App</span><span class="w"> </span><span class="n">randomNumber</span><span class="p">,</span><span class="w"> </span><span class="n">id</span><span class="p">)</span>
+
+<span class="nf">stub</span><span class="w"> </span><span class="ow">::</span><span class="w"> </span><span class="kt">YesodDispatch</span><span class="w"> </span><span class="n">a</span><span class="w"> </span><span class="ow">=&gt;</span><span class="w"> </span><span class="p">(</span><span class="n">a</span><span class="w"> </span><span class="ow">-&gt;</span><span class="w"> </span><span class="n">a</span><span class="p">)</span><span class="w"> </span><span class="ow">-&gt;</span><span class="w"> </span><span class="kt">YesodExample</span><span class="w"> </span><span class="n">a</span><span class="w"> </span><span class="nb">()</span>
+<span class="nf">stub</span><span class="w"> </span><span class="n">f</span><span class="w"> </span><span class="ow">=</span><span class="w"> </span><span class="n">testModifySite</span><span class="w"> </span><span class="p">(</span><span class="nf">\</span><span class="n">app</span><span class="w"> </span><span class="ow">-&gt;</span><span class="w"> </span><span class="n">pure</span><span class="w"> </span><span class="p">(</span><span class="n">f</span><span class="w"> </span><span class="n">app</span><span class="p">,</span><span class="w"> </span><span class="n">id</span><span class="p">))</span>
+
+<span class="nf">spec</span><span class="w"> </span><span class="ow">::</span><span class="w"> </span><span class="kt">Spec</span>
+<span class="nf">spec</span><span class="w"> </span><span class="ow">=</span><span class="w"> </span><span class="n">withApp</span><span class="w"> </span><span class="o">$</span><span class="w"> </span><span class="kr">do</span>
+
+<span class="w">  </span><span class="n">describe</span><span class="w"> </span><span class="s">&quot;GET /random&quot;</span><span class="w"> </span><span class="o">$</span><span class="w"> </span><span class="kr">do</span>
+
+<span class="w">    </span><span class="n">it</span><span class="w"> </span><span class="s">&quot;works with even numbers&quot;</span><span class="w"> </span><span class="o">$</span><span class="w"> </span><span class="kr">do</span>
+<span class="w">      </span><span class="n">stub</span><span class="w"> </span><span class="p">(</span><span class="nf">\</span><span class="n">a</span><span class="w"> </span><span class="ow">-&gt;</span><span class="w"> </span><span class="n">a</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="n">appRandomNumber</span><span class="w"> </span><span class="ow">=</span><span class="w"> </span><span class="n">pure</span><span class="w"> </span><span class="mi">66</span><span class="w"> </span><span class="p">})</span>
+<span class="w">      </span><span class="n">get</span><span class="w"> </span><span class="kt">RandomR</span>
+<span class="w">      </span><span class="n">statusIs</span><span class="w"> </span><span class="mi">200</span>
+<span class="w">      </span><span class="n">bodyEquals</span><span class="w"> </span><span class="s">&quot;</span><span class="se">\&quot;</span><span class="s">even</span><span class="se">\&quot;</span><span class="s">&quot;</span>
+
+<span class="w">    </span><span class="n">it</span><span class="w"> </span><span class="s">&quot;works with odd numbers&quot;</span><span class="w"> </span><span class="o">$</span><span class="w"> </span><span class="kr">do</span>
+<span class="w">      </span><span class="n">stub</span><span class="w"> </span><span class="p">(</span><span class="nf">\</span><span class="n">a</span><span class="w"> </span><span class="ow">-&gt;</span><span class="w"> </span><span class="n">a</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="n">appRandomNumber</span><span class="w"> </span><span class="ow">=</span><span class="w"> </span><span class="n">pure</span><span class="w"> </span><span class="mi">17</span><span class="w"> </span><span class="p">})</span>
+<span class="w">      </span><span class="n">get</span><span class="w"> </span><span class="kt">RandomR</span>
+<span class="w">      </span><span class="n">statusIs</span><span class="w"> </span><span class="mi">200</span>
+<span class="w">      </span><span class="n">bodyEquals</span><span class="w"> </span><span class="s">&quot;</span><span class="se">\&quot;</span><span class="s">odd</span><span class="se">\&quot;</span><span class="s">&quot;</span>
+</pre></div>
+
+<p>Of course, the usual warnings apply. There are problems that come along with
+stubbing out functions — if your stub doesn’t accurately reflect what that
+function <em>actually</em> does, then your test is only giving you false confidence.</p>
+<p>People often say that stubbing is bad and that you shouldn’t do it. I don’t
+think this advice is useful. Yes, your tests and application logic should be
+pure as far as you can help it. But sometimes you really <em>do</em> need a stub.</p>
+<p>A working example of this approach is <a href="https://github.com/jezen/yesod-stubbing-example">available here</a>.</p>
+
+    <br>
+    
+    <div class="body likes">
+        
+    </div>
+    
+    
+    <div class="body replies">
+        
+    </div>
+    
+    
+  </article>
+
+</div>
+</div>
+    <footer>&copy; 2025 Jezen Thomas</footer>
+
+
+    <script type="text/javascript">
+      [].slice.call(document.querySelectorAll('.footnote-ref sup')).forEach(function(el) {
+        var content = el.innerText;
+        el.innerText = '[' + content + ']';
+      })
+    </script>
+    <script type="text/javascript" src="https://www.htmlqa.com/send.js"></script>
+  </body>
+</html>
