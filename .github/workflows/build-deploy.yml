@@ -14,7 +14,7 @@ jobs:
       - run: nix build
       - name: Rebuild and Sync webmentions
         env:
-          WMTOKEN: pbj7jHLLhU_iUTPiavjsPg
+          WMTOKEN: ${{ secrets.WMTOKEN }}
         run: ./result/bin/site rebuild -v
 
       - name: Commit webmentions to repository
@@ -24,6 +24,7 @@ jobs:
         run: |
           git config user.email "maxfiialkovskyi@protonmais.com"
           git config user.name "maxfii"
+          touch webmentions.json
           git add webmentions.json
           git diff --quiet && git diff --staged --quiet || (git commit -m "${COMMIT_MSG}"; git push origin test)
 
