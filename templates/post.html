@@ -14,14 +14,21 @@
     $if(likes)$
     <div class="body likes">
         $for(likes)$
-             $html$
+             $like$
         $endfor$
     </div>
     $endif$
     $if(replies)$
     <div class="body replies">
         $for(replies)$
-            $html$
+            $repl$
+        $endfor$
+    </div>
+    $endif$
+    $if(reposts)$
+    <div class="body replies">
+        $for(reposts)$
+            $repo$
         $endfor$
     </div>
     $endif$

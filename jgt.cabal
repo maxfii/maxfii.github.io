@@ -14,6 +14,8 @@ executable site
     , aeson
     , lens
     , vector
+    , vector-algorithms
+    , unix
     , text
     , scientific
     , blaze-html
