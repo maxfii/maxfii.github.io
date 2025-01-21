@@ -7,7 +7,9 @@ cabal-version: >=1.10
 
 executable site
   main-is:          Main.hs
-  other-modules:    Redirects
+  other-modules:
+      Redirects
+    , WMentions
   build-depends:
       base                >=4    && <5
     , wreq
