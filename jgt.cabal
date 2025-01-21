@@ -10,6 +10,12 @@ executable site
   other-modules:    Redirects
   build-depends:
       base                >=4    && <5
+    , wreq
+    , aeson
+    , lens
+    , vector
+    , text
+    , scientific
     , blaze-html
     , bytestring
     , containers

@@ -3,6 +3,7 @@
 {-# LANGUAGE LambdaCase #-}
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE ViewPatterns #-}
+{-# LANGUAGE RecordWildCards #-}
 
 import Control.Monad (forM_)
 import Data.ByteString.Char8 (pack)
@@ -27,8 +28,24 @@ import Text.Pandoc.Highlighting (pygments, styleToCss, zenburn)
 import Text.Pandoc.Options
 import Text.Pandoc.Walk (walkM)
 
+import Text.Blaze.Html.Renderer.String (renderHtml)
+import Text.Blaze.Html5 ((!))
+import Text.Blaze.Html5 qualified as H
+import Text.Blaze.Html5.Attributes qualified as H
+import Data.String (fromString)
+import Network.Wreq qualified as W
+import Data.Aeson
+import Data.Aeson.KeyMap qualified as JK
+import Control.Lens ((^.))
+import Data.Vector (Vector, fromList)
+import Data.Vector qualified as V
+import Data.Text (Text)
+import Data.Text qualified as T
+import GHC.IO.Encoding qualified as E
+
 host :: String
-host = "https://jezenthomas.com"
+-- host = "https://jezenthomas.com"
+host = "https://maxfii.github.io"
 
 postsPattern :: Pattern
 postsPattern = "posts/*/*/*"
@@ -59,8 +76,94 @@ styleSheets =
   , "css/spirograph.css"
   ]
 
-main :: IO ()
-main = hakyll $ do
+data StoredMentions = SM {
+    likes :: Vector Value,
+    replies :: Vector Value,
+    reposts :: Vector Value
+} deriving (Show)
+
+instance FromJSON StoredMentions where
+    parseJSON = withObject "webmention" $ \v -> do
+        cs <- v .: "children"
+        case cs of
+            Array vec -> pure $ SM likes replies reposts where
+                (likes, rest) = V.partition (isType "like-of") vec
+                (replies, reposts) = V.partition (isType "in-reply-to") rest
+
+                isType type_ (Object kmap) = maybe False (type_ ==) (JK.lookup "wm-property" kmap)
+                isType _ _ = False
+
+            _ -> fail "failed to parse chidren as an array"
+
+
+renderRepost (Object kmap) = do
+  Object author <- JK.lookup "author" kmap
+  String authorPhotoUrl <- JK.lookup "photo" author
+  String authorUrl <- JK.lookup "url" author
+  pure . renderHtml $ H.img ! H.src (fromString $ T.unpack $ authorPhotoUrl) ! H.alt "like image"
+
+renderReply (Object kmap) = do
+  String (T.unpack -> url) <- JK.lookup "url" kmap
+  String (T.unpack -> published) <- JK.lookup "published" kmap
+  Object author <- JK.lookup "author" kmap
+  Object content <- JK.lookup "content" kmap
+  String (T.unpack -> chtml) <- JK.lookup "html" content
+  String (T.unpack -> ctext) <- JK.lookup "text" content
+  String (T.unpack -> authorPhotoUrl) <- JK.lookup "photo" author
+  String (T.unpack -> authorName) <- JK.lookup "name" author
+  String (T.unpack -> authorUrl) <- JK.lookup "url" author
+  pure . renderHtml $
+      H.div $ do
+          H.a ! H.href (fromString url) $
+              H.img ! H.src (fromString authorPhotoUrl) ! H.alt (fromString authorName)
+          H.div $ do
+              H.strong (H.a ! H.href (fromString authorUrl) $ (fromString authorName))
+              H.div ! H.class_ "Mention_content" $ fromString chtml
+              H.small $ H.a ! H.href (fromString url) $ fromString published
+
+renderLike (Object kmap) = do
+  String (T.unpack -> url) <- JK.lookup "url" kmap
+  Object author <- JK.lookup "author" kmap
+  String authorPhotoUrl <- JK.lookup "photo" author
+  String (T.unpack -> authorPhotoUrl) <- JK.lookup "photo" author
+  String (T.unpack -> authorName) <- JK.lookup "name" author
+  pure . renderHtml $ H.a ! H.href (fromString url) $
+      H.img ! H.src (fromString authorPhotoUrl) ! H.alt (fromString authorName)
+
+main = do
+    E.setLocaleEncoding E.utf8
+    hmain
+
+hmain :: IO ()
+hmain = hakyll $ do
+  let webementionIoToken = "pbj7jHLLhU_iUTPiavjsPg"
+
+  mentions <- preprocess $ do
+      response <- W.get $ "https://webmention.io/api/mentions.jf2?domain=maxfii.github.io&token="
+        <> webementionIoToken
+
+      case response ^. W.responseStatus . W.statusCode of
+        200 -> case eitherDecode $ response ^. W.responseBody of
+            Right sm@(SM _ _ _) -> pure sm
+            Left err -> error err
+        bad -> error $ "Error fetching webmentions. status code: " <> show bad
+
+  let mkMentionPath type_ (Object kmap) = do
+        String target <- JK.lookup "wm-target" kmap
+        Number wmid <- JK.lookup "wm-id" kmap
+        pure . fromFilePath $ "mentions/" <> type_ <> "/" <> drop 8 (T.unpack target) <> "/" <> show wmid
+
+      saveMention render type_ obj = do
+        case mkMentionPath type_ obj of
+            Just path -> create [path] . compile $ do
+                it <- makeItem $ fromMaybe "" $ render obj
+                debugCompiler $ show $ "LOOK: saving" <> show it
+                pure it
+            Nothing -> fail $ "LOOK: Error: Couldn't save mention obj: " <> show obj
+
+  forM_ (likes mentions) (saveMention renderLike "likes")
+  forM_ (replies mentions) (saveMention renderReply "replies")
+  forM_ (reposts mentions) (saveMention renderRepost "reposts")
 
   compiledStylesheetPath <- preprocess $ do
     styles <- mapM readFile styleSheets
@@ -101,11 +204,16 @@ main = hakyll $ do
     route postCleanRoute
     dep <- makePatternDependency "css/*"
     rulesExtraDependencies [dep] $ compile $ do
+      let wmctx = listField "likes" (field "html" (return . itemBody))
+                (loadAll $ "mentions/likes/*/**")
+              <> listField "replies" (field "html" (return . itemBody))
+                (loadAll $ "mentions/replies/*/**")
+
       ident <- getUnderlying
       blogCompiler
         >>= loadAndApplyTemplate "templates/post-content.html" postCtx
         >>= saveSnapshot "content"
-        >>= loadAndApplyTemplate "templates/post.html" (postCtx <> utcCtx)
+        >>= loadAndApplyTemplate "templates/post.html" (postCtx <> utcCtx <> wmctx)
         >>= loadAndApplyTemplate "templates/default.html" (postCtx <> boolField "page-blog" (const True))
         >>= cleanIndexUrls
 

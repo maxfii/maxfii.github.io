@@ -11,4 +11,21 @@
     </div>
     $body$
   </article>
+    $if(likes)$
+        <p>likes</p>
+        <ul>
+            $for(likes)$
+            <li> $html$ <\li>
+            $endfor$
+        <\ul>
+    $endif$
+    $if(replies)$
+        <p>replies</p>
+        <ul>
+            $for(replies)$
+            <li> $html$ <\li>
+            $endfor$
+        <\ul>
+    $endif$
+
 </div>
