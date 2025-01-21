@@ -179,6 +179,7 @@ hmain = hakyll $ do
 
   newMentions <- preprocess $ do
     webementionIoToken <- getEnv "WMTOKEN"
+    putStrLn $ "Warning: toker is this" <> show webementionIoToken
     case webementionIoToken of
       Nothing -> do
         putStrLn $ "Warning: no webmention.io token found"
