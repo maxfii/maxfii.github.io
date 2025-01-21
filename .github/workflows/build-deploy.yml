@@ -20,7 +20,7 @@ jobs:
       - name: Commit webmentions to repository
         env:
           COMMIT_MSG: |
-            Sync webmentions
+            Sync webmentions [skip actions]
         run: |
           git config user.email "maxfiialkovskyi@protonmais.com"
           git config user.name "maxfii"
