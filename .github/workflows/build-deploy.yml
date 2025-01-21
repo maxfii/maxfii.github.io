@@ -15,7 +15,7 @@ jobs:
       - name: Rebuild and Sync webmentions
         env:
           WMTOKEN: $
-      - run: ./result/bin/site rebuild
+        run: ./result/bin/site rebuild
 
       - name: Deploy
         uses: JamesIves/github-pages-deploy-action@v4
