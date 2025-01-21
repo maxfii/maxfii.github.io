@@ -1,0 +1,179 @@
+<!DOCTYPE html>
+<!--
+
+  [Please Enter New Password]
+
+  fortnight
+
+  [Error: Password is Two Week]
+
+-->
+<html lang="en">
+  <head>
+    <title>How I Write Invoices in Vim</title>
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+    <meta name="description" content="I use Vim for writing code, composing emails, taking notes, and just about everything. It makes sense to use it for building business paperwork too.">
+    <meta name="author" content="Jezen Thomas">
+    <meta property="og:title" content="How I Write Invoices in Vim">
+    <meta property="og:description" content="I use Vim for writing code, composing emails, taking notes, and just about everything. It makes sense to use it for building business paperwork too.">
+    <meta property="og:type" content="article">
+    <meta property="og:image" content="/static/img/prestiz.jpg">
+    <meta property="og:site_name" content="Jezen Thomas">
+    <meta name="twitter:card" content="summary_large_image">
+    <meta property="twitter:domain" content="jezenthomas.com">
+    <meta name="twitter:title" content="How I Write Invoices in Vim">
+    <meta name="twitter:description" content="I use Vim for writing code, composing emails, taking notes, and just about everything. It makes sense to use it for building business paperwork too.">
+    <meta name="twitter:image" content="/static/img/prestiz.jpg">
+    <meta name="format-detection" content="telephone=no">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="icon" type="image/gif" href="/doom.gif">
+    <link rel="stylesheet" type="text/css" href="/css/d5f640a9850832edcabd8c7d91edc267.css">
+    <link rel="alternate" type="application/rss+xml" href="/feed.xml" title="RSS feed">
+    <link rel="webmention" href="https://webmention.io/maxfii.github.io/webmention" />
+  </head>
+  <body>
+    
+    
+
+    <header>
+  <a class="portrait" href="/">
+    <img width="80" height="80" alt="Jezen Thomas" src="/static/img/jgt.jpg" loading="lazy">
+  </a>
+  <h1 class="site-title">
+    <a href="/">Jezen Thomas</a>
+  </h1>
+  <p class="bio">
+    CTO &amp; Co-Founder at Supercede.
+  </p>
+</header>
+
+    <div id="main"><div class="container">
+  <article>
+    <h1 class="post-title">How I Write Invoices in Vim</h1>
+    <div class="post-meta">
+      <p class="post-date">
+        September  5<sup>th</sup>, 2015
+        
+        | Gdynia, Poland
+        
+      </p>
+    </div>
+    <p><span class="run-in"><span class="drop">S</span>ince starting my own
+company</span> back in April, I’ve had to piece together some fairly mundane
+business boilerplate, <em>e.g.</em>, invoices, at the end of each month.</p>
+<p>I think people typically use something from Microsoft Office for this, or maybe
+some online invoicing web application, but I’m quite happy to stay in the land
+of Vim for these tasks.</p>
+<p>I learned that there are some special configuration details that need to be
+ironed out in order to make invoices render nicely, but it’s mostly a
+set-it-and-forget-it experience.</p>
+<p>All of my invoices are kept in the same directory on my system, and I keep a
+special <code>.vimrc</code> file in that same directory which contains a few rules that
+provide a sane invoice editing experience. Here’s that very small file:</p>
+<div class="highlight"><pre><span></span><span class="k">set</span> <span class="nb">tw</span><span class="p">=</span><span class="m">80</span>
+<span class="k">set</span> <span class="nb">bg</span><span class="p">=</span><span class="nb">light</span>
+<span class="k">set</span> <span class="nb">nolist</span>
+<span class="k">set</span> <span class="nb">nofoldenable</span>
+<span class="k">set</span> <span class="nb">nonumber</span>
+<span class="k">set</span> <span class="nb">norelativenumber</span>
+</pre></div>
+
+<p>The first rule sets the text width, essentially saying I want the right-edge of
+my document to fall after the 80th column. This stops me from drawing a table
+that wraps across lines and destroys the formatting. The second rule is
+important for rendering the invoice as a PDF, as we’ll see a little later. The
+rest of the rules are just there for comfort and clarity.</p>
+<p>Vim doesn’t support directory-specific <code>.vimrc</code> files by default, so I added the
+following couple of rules to my global <code>~/.vimrc</code>. It’s important to add that
+second rule, otherwise anytime you work on a project with other people they
+could add some malicious code to a directory-specific <code>.vimrc</code> and your machine
+would run it as soon as you open Vim from that directory.</p>
+<div class="highlight"><pre><span></span><span class="k">set</span> <span class="nb">exrc</span> <span class="c">&quot; Enable use of directory-specific .vimrc</span>
+<span class="k">set</span> <span class="nb">secure</span> <span class="c">&quot; Only run autocommands owned by me</span>
+</pre></div>
+
+<p>Now we come to actually writing the invoice. It’s fairly standard that an
+invoice begins with the name and address of your own company, followed by the
+name and address of the recipient. The name and address of your own company are
+usually right-aligned, and Vim handles this with the <code>right</code> Ex command. If you
+do a line-wise visual selection over your address details, hit <code>:</code>, and then
+type <code>right</code> and hit enter, your text is right-aligned. The command looks like:</p>
+<div class="highlight"><pre><span></span><span class="p">:</span><span class="s1">'&lt;,'</span><span class="p">&gt;</span><span class="k">right</span>
+</pre></div>
+
+<p>The next part of the invoice contains the table of line items that you’re
+invoicing for. I drew the table by copying and pasting a bunch of unicode
+box-drawing characters. There are probably tools for doing this automatically,
+but I only had to do this once and I can mostly reuse the table for every
+invoice I create.</p>
+<p>We don’t need to leave Vim to find these box-drawing characters. We can view the
+fancy characters (digraphs) by issuing the <code>:dig</code> command. If you scroll down
+slightly, you’ll notice the three characters I use are <code>hh</code>, <code>vv</code>, and <code>vh</code>.
+Hitting <code>&lt;C-k&gt;</code> from insert mode followed by the digraph combination gives us
+the characters we’re looking for.</p>
+<div class="highlight"><pre><span></span> DESCRIPTION         
+</pre></div>
+
+<p><em>n.b. I don’t actually charge per line of code.</em></p>
+<p>I’m too lazy to do the above multiplication in my head, so instead of reaching
+for a calculator and finding the product of 120 and 7, I use Vim’s expression
+register. This means going into insert mode with the cursor in the table row’s
+amount field, hitting <code>&lt;C-r&gt;</code>, then <code>=</code>, and then <code>120*7</code>, and finishing with
+<code>&lt;cr&gt;</code>.</p>
+<p>The rest of the document is straight-forward and uninteresting. For
+completeness, you can <a href="https://gist.github.com/jezen/c05c0944a2fc32512321">see an example invoice in this Gist</a>. For
+fun, I drew my company logo with ASCII art using some online generator. There
+are a bunch of them out there.</p>
+<p>Once the invoice contains all the correct information and is nicely formatted,
+we need to render the document in a format companies will accept. You could
+print documents directly from Vim, but I found this to be somewhat fiddly and
+didn’t manage to make it work as well as I’d like. Besides, I want to keep a
+digital copy of the rendered version anyway.</p>
+<p>PDF seems to be the standard way to pass these documents around. You can create
+PDFs directly from Vim by doing some dance with the <code>:hardcopy</code> command and
+PostScript, but the easiest thing to do is just to use a HTML document as an
+intermediary.</p>
+<p>When you issue the <code>:TOhtml</code> command, Vim turns your text document into an HTML
+document in a horizontal split. From here, you save the HTML document, and issue
+the <code>:!open %</code> command to open the document in a web browser. The style rules
+used in the HTML document somewhat reflect the colours you use in Vim, which is
+why it was important to explicitly set Vim’s background colour earlier (assuming
+you normally use Vim with a dark background, that is).</p>
+<p>Once you have your invoice in a HTML document in your web browser, you can print
+it and/or export it to a PDF. Remember to disable any headers and footers that
+your browser adds when printing.</p>
+
+  </article>
+    
+        <p>likes</p>
+        <ul>
+            
+            <li> <a href="https://bsky.app/profile/maxfii.bsky.social/post/3lg6g3gzwr427#liked_by_did:plc:5cgdlq7fnk5imj26dcf2ux2j"><img src="https://webmention.io/avatar/cdn.bsky.app/b49d52e23e96bf9f6d221cc891f1ff87c9f6dd8f90c84baf0a8a5793c26b4771.jpg" alt></a> <\li>
+            
+            <li> <a href="https://bsky.app/profile/maxfii.bsky.social/post/3lg6g4oyyh427#liked_by_did:plc:5cgdlq7fnk5imj26dcf2ux2j"><img src="https://webmention.io/avatar/cdn.bsky.app/b49d52e23e96bf9f6d221cc891f1ff87c9f6dd8f90c84baf0a8a5793c26b4771.jpg" alt></a> <\li>
+            
+        <\ul>
+    
+    
+        <p>replies</p>
+        <ul>
+            
+            <li> <div><a href="https://bsky.app/profile/maxfii.bsky.social/post/3lg6g4oyyh427"><img src="https://webmention.io/avatar/cdn.bsky.app/b49d52e23e96bf9f6d221cc891f1ff87c9f6dd8f90c84baf0a8a5793c26b4771.jpg" alt></a><div><strong><a href="https://bsky.app/profile/maxfii.bsky.social"></a></strong><div class="Mention_content">what's this &lt;a href=&quot;https://maxfii.github.io&quot;&gt;maxfii.github.io&lt;/a&gt; you're talknig about  woof?</div><small><a href="https://bsky.app/profile/maxfii.bsky.social/post/3lg6g4oyyh427">2025-01-20T13:13:04+00:00</a></small></div></div> <\li>
+            
+        <\ul>
+    
+
+</div>
+</div>
+    <footer>&copy; 2025 Jezen Thomas</footer>
+
+
+    <script type="text/javascript">
+      [].slice.call(document.querySelectorAll('.footnote-ref sup')).forEach(function(el) {
+        var content = el.innerText;
+        el.innerText = '[' + content + ']';
+      })
+    </script>
+    <script type="text/javascript" src="https://www.htmlqa.com/send.js"></script>
+  </body>
+</html>

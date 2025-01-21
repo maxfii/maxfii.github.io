@@ -1,0 +1,210 @@
+<!DOCTYPE html>
+<!--
+
+  [Please Enter New Password]
+
+  fortnight
+
+  [Error: Password is Two Week]
+
+-->
+<html lang="en">
+  <head>
+    <title>Solving a Maths Riddle with Bad Haskell</title>
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+    <meta name="description" content="Sometimes you need to get some quick and dirty scripting work done. Sometimes Haskell is an excellent tool for this.">
+    <meta name="author" content="Jezen Thomas">
+    <meta property="og:title" content="Solving a Maths Riddle with Bad Haskell">
+    <meta property="og:description" content="Sometimes you need to get some quick and dirty scripting work done. Sometimes Haskell is an excellent tool for this.">
+    <meta property="og:type" content="article">
+    <meta property="og:image" content="/static/img/numbers.jpg">
+    <meta property="og:site_name" content="Jezen Thomas">
+    <meta name="twitter:card" content="summary_large_image">
+    <meta property="twitter:domain" content="jezenthomas.com">
+    <meta name="twitter:title" content="Solving a Maths Riddle with Bad Haskell">
+    <meta name="twitter:description" content="Sometimes you need to get some quick and dirty scripting work done. Sometimes Haskell is an excellent tool for this.">
+    <meta name="twitter:image" content="/static/img/numbers.jpg">
+    <meta name="format-detection" content="telephone=no">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="icon" type="image/gif" href="/doom.gif">
+    <link rel="stylesheet" type="text/css" href="/css/d5f640a9850832edcabd8c7d91edc267.css">
+    <link rel="alternate" type="application/rss+xml" href="/feed.xml" title="RSS feed">
+    <link rel="webmention" href="https://webmention.io/maxfii.github.io/webmention" />
+  </head>
+  <body>
+    
+    
+
+    <header>
+  <a class="portrait" href="/">
+    <img width="80" height="80" alt="Jezen Thomas" src="/static/img/jgt.jpg" loading="lazy">
+  </a>
+  <h1 class="site-title">
+    <a href="/">Jezen Thomas</a>
+  </h1>
+  <p class="bio">
+    CTO &amp; Co-Founder at Supercede.
+  </p>
+</header>
+
+    <div id="main"><div class="container">
+  <article>
+    <h1 class="post-title">Solving a Maths Riddle with Bad Haskell</h1>
+    <div class="post-meta">
+      <p class="post-date">
+        May  3<sup>rd</sup>, 2022
+        
+        | Kraków, Poland
+        
+      </p>
+    </div>
+    <p>At a previous company off-site, a colleague shared a mathematical brain teaser
+with the team:</p>
+<blockquote>
+<p>With the numbers <code>123456789</code>, make them add up to <code>100</code>. They must stay in
+the same order but you can use addition, subtraction, multiplication,
+division, brackets etc. All numbers must be used exactly once.</p>
+</blockquote>
+<p>I’m admittedly not great at arithmetic, and I didn’t make much progress when
+trying to brute-force a solution in my head. Naturally I decided to reach for
+my big hammer: Haskell.</p>
+<p>The first idea I had to attack this problem was to enumerate all possible
+expressions you would have as a result of combining the different permitted
+mathematical operators, slotted between each of the digits.</p>
+<p>Whenever I need to generate all the combinations of things, I usually reach for
+Haskell’s list comprehensions. For example, if you wanted to generate all
+possible pairs of the numbers 1, 2, and 3, you might write the following list
+comprehension:</p>
+<div class="highlight"><pre><span></span><span class="p">[</span><span class="w"> </span><span class="p">(</span><span class="n">x</span><span class="p">,</span><span class="w"> </span><span class="n">y</span><span class="p">)</span><span class="w"> </span><span class="o">|</span><span class="w"> </span><span class="n">x</span><span class="w"> </span><span class="ow">&lt;-</span><span class="w"> </span><span class="p">[</span><span class="mi">1</span><span class="o">..</span><span class="mi">3</span><span class="p">],</span><span class="w"> </span><span class="n">y</span><span class="w"> </span><span class="ow">&lt;-</span><span class="w"> </span><span class="p">[</span><span class="mi">1</span><span class="o">..</span><span class="mi">3</span><span class="p">]</span><span class="w"> </span><span class="p">]</span>
+
+<span class="c1">-- evaluates to:</span>
+<span class="c1">--   [(1,1),(1,2),(1,3),(2,1),(2,2),(2,3),(3,1),(3,2),(3,3)]</span>
+</pre></div>
+
+<p>Applying this approach to the maths riddle is essentially the same:</p>
+<div class="highlight"><pre><span></span><span class="kr">let</span><span class="w"> </span><span class="n">ops</span><span class="w"> </span><span class="ow">=</span><span class="w"> </span><span class="p">[</span><span class="w"> </span><span class="sc">'+'</span><span class="p">,</span><span class="w"> </span><span class="sc">'-'</span><span class="p">,</span><span class="w"> </span><span class="sc">'/'</span><span class="p">,</span><span class="w"> </span><span class="sc">'*'</span><span class="w"> </span><span class="p">]</span>
+<span class="w"> </span><span class="kr">in</span><span class="w"> </span><span class="p">[</span><span class="w"> </span><span class="p">[</span><span class="w"> </span><span class="sc">'1'</span><span class="p">,</span><span class="w"> </span><span class="n">a</span><span class="p">,</span><span class="w"> </span><span class="sc">'2'</span><span class="p">,</span><span class="w"> </span><span class="n">b</span><span class="p">,</span><span class="w"> </span><span class="sc">'3'</span><span class="p">,</span><span class="w"> </span><span class="n">c</span><span class="p">,</span><span class="w"> </span><span class="sc">'4'</span><span class="p">,</span><span class="w"> </span><span class="n">d</span><span class="p">,</span><span class="w"> </span><span class="sc">'5'</span><span class="p">,</span><span class="w"> </span><span class="n">e</span><span class="p">,</span><span class="w"> </span><span class="sc">'6'</span><span class="p">,</span><span class="w"> </span><span class="n">f</span><span class="p">,</span><span class="w"> </span><span class="sc">'7'</span><span class="p">,</span><span class="w"> </span><span class="n">g</span><span class="p">,</span><span class="w"> </span><span class="sc">'8'</span><span class="p">,</span><span class="w"> </span><span class="n">h</span><span class="p">,</span><span class="w"> </span><span class="sc">'9'</span><span class="w"> </span><span class="p">]</span>
+<span class="w">      </span><span class="o">|</span><span class="w"> </span><span class="n">a</span><span class="w"> </span><span class="ow">&lt;-</span><span class="w"> </span><span class="n">ops</span><span class="p">,</span><span class="w"> </span><span class="n">b</span><span class="w"> </span><span class="ow">&lt;-</span><span class="w"> </span><span class="n">ops</span>
+<span class="w">      </span><span class="p">,</span><span class="w"> </span><span class="n">c</span><span class="w"> </span><span class="ow">&lt;-</span><span class="w"> </span><span class="n">ops</span><span class="p">,</span><span class="w"> </span><span class="n">d</span><span class="w"> </span><span class="ow">&lt;-</span><span class="w"> </span><span class="n">ops</span>
+<span class="w">      </span><span class="p">,</span><span class="w"> </span><span class="n">e</span><span class="w"> </span><span class="ow">&lt;-</span><span class="w"> </span><span class="n">ops</span><span class="p">,</span><span class="w"> </span><span class="n">f</span><span class="w"> </span><span class="ow">&lt;-</span><span class="w"> </span><span class="n">ops</span>
+<span class="w">      </span><span class="p">,</span><span class="w"> </span><span class="n">g</span><span class="w"> </span><span class="ow">&lt;-</span><span class="w"> </span><span class="n">ops</span><span class="p">,</span><span class="w"> </span><span class="n">h</span><span class="w"> </span><span class="ow">&lt;-</span><span class="w"> </span><span class="n">ops</span>
+<span class="w">      </span><span class="p">]</span>
+</pre></div>
+
+<p>Each of the digits and mathematical operators are represented as character
+values, because Haskell lists are <em>homogenous</em> — all values must be of the same
+type. The <code>let</code> binding cleans up what would otherwise be quite a bit of
+tedious repetition.</p>
+<p>Evaluating this expression generates a whole bunch of mathematical expressions
+encoded in strings — 65,536 expressions to be exact. The expressions look like
+this:</p>
+<div class="highlight"><pre><span></span><span class="p">[</span><span class="w"> </span><span class="s">&quot;1*2*3*4/5-6-7*8-9&quot;</span>
+<span class="p">,</span><span class="w"> </span><span class="s">&quot;1*2*3*4/5-6-7*8/9&quot;</span>
+<span class="p">,</span><span class="w"> </span><span class="s">&quot;1*2*3*4/5-6-7*8*9&quot;</span>
+<span class="p">,</span><span class="w"> </span><span class="s">&quot;1*2*3*4/5-6/7+8+9&quot;</span>
+<span class="c1">-- etc.</span>
+</pre></div>
+
+<p>Now that we have a collection of expressions, we need to evaluate each of them
+and find those which evaluate to <code>100</code>. Evaluating string values as code is
+something that even a decade ago in the JavaScript world would have been
+frowned upon. JavaScript provides the <code>eval()</code> function for this, but
+conventional wisdom states that <code>eval()</code> is <em>evil</em>, and should <em>never</em> be used.</p>
+<p>I beg to differ.</p>
+<p>But even still, <code>eval()</code> is just this gross hacky thing that only exists in
+languages like JavaScript, right? Surely you can’t do the same thing in a pure,
+ivory-tower language like Haskell, right?! As it turns out, you can!</p>
+<p>If you add the <a href="https://hackage.haskell.org/package/hint"><code>hint</code></a> package, you can do something like this:</p>
+<div class="highlight"><pre><span></span><span class="kr">import</span><span class="w"> </span><span class="nn">Language.Haskell.Interpreter</span>
+
+<span class="nf">f</span><span class="w"> </span><span class="ow">=</span><span class="w"> </span><span class="n">runInterpreter</span><span class="w"> </span><span class="o">$</span><span class="w"> </span><span class="kr">do</span>
+<span class="w">  </span><span class="n">setImports</span><span class="w"> </span><span class="p">[</span><span class="s">&quot;Prelude&quot;</span><span class="p">]</span>
+<span class="w">  </span><span class="n">eval</span><span class="w"> </span><span class="s">&quot;3 + 5&quot;</span><span class="w"> </span><span class="c1">-- evaluates to `Right &quot;8&quot;`</span>
+</pre></div>
+
+<p>Pretty cool, if not somewhat heretical.</p>
+<p>Essentially all that’s left to do is plug the 65,536 mathematical expression
+strings into the machinery that evaluates them, and filter the results to only
+those where the result is <code>100</code>. Here’s what I came up with:</p>
+<div class="highlight"><pre><span></span><span class="kr">import</span><span class="w"> </span><span class="nn">Control.Monad</span><span class="w"> </span><span class="p">(</span><span class="nf">forM</span><span class="p">)</span>
+<span class="kr">import</span><span class="w"> </span><span class="nn">Language.Haskell.Interpreter</span>
+
+<span class="nf">expressions</span><span class="w"> </span><span class="ow">::</span><span class="w"> </span><span class="p">[</span><span class="kt">String</span><span class="p">]</span>
+<span class="nf">expressions</span><span class="w"> </span><span class="ow">=</span>
+<span class="w">  </span><span class="kr">let</span><span class="w"> </span><span class="n">ops</span><span class="w"> </span><span class="ow">=</span><span class="w"> </span><span class="p">[</span><span class="w"> </span><span class="sc">'+'</span><span class="p">,</span><span class="w"> </span><span class="sc">'-'</span><span class="p">,</span><span class="w"> </span><span class="sc">'/'</span><span class="p">,</span><span class="w"> </span><span class="sc">'*'</span><span class="w"> </span><span class="p">]</span>
+<span class="w">   </span><span class="kr">in</span><span class="w"> </span><span class="p">[</span><span class="w"> </span><span class="p">[</span><span class="w"> </span><span class="sc">'1'</span><span class="p">,</span><span class="w"> </span><span class="n">a</span><span class="p">,</span><span class="w"> </span><span class="sc">'2'</span><span class="p">,</span><span class="w"> </span><span class="n">b</span><span class="p">,</span><span class="w"> </span><span class="sc">'3'</span><span class="p">,</span><span class="w"> </span><span class="n">c</span><span class="p">,</span><span class="w"> </span><span class="sc">'4'</span><span class="p">,</span><span class="w"> </span><span class="n">d</span><span class="p">,</span><span class="w"> </span><span class="sc">'5'</span><span class="p">,</span><span class="w"> </span><span class="n">e</span><span class="p">,</span><span class="w"> </span><span class="sc">'6'</span><span class="p">,</span><span class="w"> </span><span class="n">f</span><span class="p">,</span><span class="w"> </span><span class="sc">'7'</span><span class="p">,</span><span class="w"> </span><span class="n">g</span><span class="p">,</span><span class="w"> </span><span class="sc">'8'</span><span class="p">,</span><span class="w"> </span><span class="n">h</span><span class="p">,</span><span class="w"> </span><span class="sc">'9'</span><span class="w"> </span><span class="p">]</span>
+<span class="w">        </span><span class="o">|</span><span class="w"> </span><span class="n">a</span><span class="w"> </span><span class="ow">&lt;-</span><span class="w"> </span><span class="n">ops</span><span class="p">,</span><span class="w"> </span><span class="n">b</span><span class="w"> </span><span class="ow">&lt;-</span><span class="w"> </span><span class="n">ops</span>
+<span class="w">        </span><span class="p">,</span><span class="w"> </span><span class="n">c</span><span class="w"> </span><span class="ow">&lt;-</span><span class="w"> </span><span class="n">ops</span><span class="p">,</span><span class="w"> </span><span class="n">d</span><span class="w"> </span><span class="ow">&lt;-</span><span class="w"> </span><span class="n">ops</span>
+<span class="w">        </span><span class="p">,</span><span class="w"> </span><span class="n">e</span><span class="w"> </span><span class="ow">&lt;-</span><span class="w"> </span><span class="n">ops</span><span class="p">,</span><span class="w"> </span><span class="n">f</span><span class="w"> </span><span class="ow">&lt;-</span><span class="w"> </span><span class="n">ops</span>
+<span class="w">        </span><span class="p">,</span><span class="w"> </span><span class="n">g</span><span class="w"> </span><span class="ow">&lt;-</span><span class="w"> </span><span class="n">ops</span><span class="p">,</span><span class="w"> </span><span class="n">h</span><span class="w"> </span><span class="ow">&lt;-</span><span class="w"> </span><span class="n">ops</span>
+<span class="w">        </span><span class="p">]</span>
+
+<span class="nf">result</span><span class="w"> </span><span class="ow">=</span><span class="w"> </span><span class="n">runInterpreter</span><span class="w"> </span><span class="o">$</span><span class="w"> </span><span class="kr">do</span>
+<span class="w">  </span><span class="n">setImports</span><span class="w"> </span><span class="p">[</span><span class="s">&quot;Prelude&quot;</span><span class="p">]</span>
+<span class="w">  </span><span class="n">exprs</span><span class="w"> </span><span class="ow">&lt;-</span><span class="w"> </span><span class="n">forM</span><span class="w"> </span><span class="n">expressions</span><span class="w"> </span><span class="n">evaluate</span>
+<span class="w">  </span><span class="n">pure</span><span class="w"> </span><span class="o">$</span><span class="w"> </span><span class="n">filter</span><span class="w"> </span><span class="p">(</span><span class="nf">\</span><span class="p">(</span><span class="kr">_</span><span class="p">,</span><span class="w"> </span><span class="n">a</span><span class="p">)</span><span class="w"> </span><span class="ow">-&gt;</span><span class="w"> </span><span class="n">a</span><span class="w"> </span><span class="o">==</span><span class="w"> </span><span class="s">&quot;100&quot;</span><span class="p">)</span><span class="w"> </span><span class="o">$</span><span class="w"> </span><span class="n">fromRight</span><span class="w"> </span><span class="kt">[]</span><span class="w"> </span><span class="n">exprs</span>
+<span class="w">  </span><span class="kr">where</span>
+<span class="w">  </span><span class="n">evaluate</span><span class="w"> </span><span class="n">expr</span><span class="w"> </span><span class="ow">=</span><span class="w"> </span><span class="n">eval</span><span class="w"> </span><span class="n">expr</span><span class="w"> </span><span class="o">&gt;&gt;=</span><span class="w"> </span><span class="nf">\</span><span class="n">a</span><span class="w"> </span><span class="ow">-&gt;</span><span class="w"> </span><span class="n">pure</span><span class="w"> </span><span class="p">(</span><span class="n">expr</span><span class="p">,</span><span class="w"> </span><span class="n">a</span><span class="p">)</span>
+</pre></div>
+
+<p>The above is an expanded version of what I originally wrote. When I was playing
+with this, I actually wrote it as a one-liner directly in GHCi, which is a
+similar experience to composing a Unix command line. Is my approach an
+efficient way to find the possible answers? No. Do I care enough to optimise my
+approach? Also no. Who said Haskell can’t do quick and dirty scripting work?</p>
+<p>Running this produces 14 possible answers, and that’s without enumerating all
+those possible answers that would result from changing the order of operations
+with brackets.</p>
+<div class="highlight"><pre><span></span>1 + 2 + 3 + 4 + 5 + 6 + 7 + 8 * 9
+1 + 2 + 3 - 4 * 5 + 6 * 7 + 8 * 9
+1 + 2 - 3 * 4 + 5 * 6 + 7 + 8 * 9
+1 + 2 - 3 * 4 - 5 + 6 * 7 + 8 * 9
+1 + 2 * 3 + 4 * 5 - 6 + 7 + 8 * 9
+1 - 2 + 3 * 4 * 5 + 6 * 7 + 8 - 9
+1 - 2 + 3 * 4 * 5 - 6 + 7 * 8 - 9
+1 - 2 * 3 + 4 * 5 + 6 + 7 + 8 * 9
+1 - 2 * 3 - 4 + 5 * 6 + 7 + 8 * 9
+1 - 2 * 3 - 4 - 5 + 6 * 7 + 8 * 9
+1 * 2 * 3 + 4 + 5 + 6 + 7 + 8 * 9
+1 * 2 * 3 - 4 * 5 + 6 * 7 + 8 * 9
+1 * 2 * 3 * 4 + 5 + 6 + 7 * 8 + 9
+1 * 2 * 3 * 4 + 5 + 6 - 7 + 8 * 9
+</pre></div>
+
+<p>After submitting my answers, my colleague rejected my approach because I “used
+a program”, and “that’s cheating.”</p>
+
+  </article>
+    
+        <p>likes</p>
+        <ul>
+            
+            <li> <a href="https://bsky.app/profile/maxfii.bsky.social/post/3lg6g3gzwr427#liked_by_did:plc:5cgdlq7fnk5imj26dcf2ux2j"><img src="https://webmention.io/avatar/cdn.bsky.app/b49d52e23e96bf9f6d221cc891f1ff87c9f6dd8f90c84baf0a8a5793c26b4771.jpg" alt></a> <\li>
+            
+            <li> <a href="https://bsky.app/profile/maxfii.bsky.social/post/3lg6g4oyyh427#liked_by_did:plc:5cgdlq7fnk5imj26dcf2ux2j"><img src="https://webmention.io/avatar/cdn.bsky.app/b49d52e23e96bf9f6d221cc891f1ff87c9f6dd8f90c84baf0a8a5793c26b4771.jpg" alt></a> <\li>
+            
+        <\ul>
+    
+    
+        <p>replies</p>
+        <ul>
+            
+            <li> <div><a href="https://bsky.app/profile/maxfii.bsky.social/post/3lg6g4oyyh427"><img src="https://webmention.io/avatar/cdn.bsky.app/b49d52e23e96bf9f6d221cc891f1ff87c9f6dd8f90c84baf0a8a5793c26b4771.jpg" alt></a><div><strong><a href="https://bsky.app/profile/maxfii.bsky.social"></a></strong><div class="Mention_content">what's this &lt;a href=&quot;https://maxfii.github.io&quot;&gt;maxfii.github.io&lt;/a&gt; you're talknig about  woof?</div><small><a href="https://bsky.app/profile/maxfii.bsky.social/post/3lg6g4oyyh427">2025-01-20T13:13:04+00:00</a></small></div></div> <\li>
+            
+        <\ul>
+    
+
+</div>
+</div>
+    <footer>&copy; 2025 Jezen Thomas</footer>
+
+
+    <script type="text/javascript">
+      [].slice.call(document.querySelectorAll('.footnote-ref sup')).forEach(function(el) {
+        var content = el.innerText;
+        el.innerText = '[' + content + ']';
+      })
+    </script>
+    <script type="text/javascript" src="https://www.htmlqa.com/send.js"></script>
+  </body>
+</html>

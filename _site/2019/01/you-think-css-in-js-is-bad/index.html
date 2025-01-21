@@ -1,0 +1,129 @@
+<!DOCTYPE html>
+<!--
+
+  [Please Enter New Password]
+
+  fortnight
+
+  [Error: Password is Two Week]
+
+-->
+<html lang="en">
+  <head>
+    <title>You Think CSS-in-JS is Bad?</title>
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+    <meta name="description" content="Yes, web development really was this crazy a decade ago. And this only scratches the surface!">
+    <meta name="author" content="Jezen Thomas">
+    <meta property="og:title" content="You Think CSS-in-JS is Bad?">
+    <meta property="og:description" content="Yes, web development really was this crazy a decade ago. And this only scratches the surface!">
+    <meta property="og:type" content="article">
+    <meta property="og:image" content="/static/img/prestiz.jpg">
+    <meta property="og:site_name" content="Jezen Thomas">
+    <meta name="twitter:card" content="summary_large_image">
+    <meta property="twitter:domain" content="jezenthomas.com">
+    <meta name="twitter:title" content="You Think CSS-in-JS is Bad?">
+    <meta name="twitter:description" content="Yes, web development really was this crazy a decade ago. And this only scratches the surface!">
+    <meta name="twitter:image" content="/static/img/prestiz.jpg">
+    <meta name="format-detection" content="telephone=no">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="icon" type="image/gif" href="/doom.gif">
+    <link rel="stylesheet" type="text/css" href="/css/d5f640a9850832edcabd8c7d91edc267.css">
+    <link rel="alternate" type="application/rss+xml" href="/feed.xml" title="RSS feed">
+    <link rel="webmention" href="https://webmention.io/maxfii.github.io/webmention" />
+  </head>
+  <body>
+    
+    
+
+    <header>
+  <a class="portrait" href="/">
+    <img width="80" height="80" alt="Jezen Thomas" src="/static/img/jgt.jpg" loading="lazy">
+  </a>
+  <h1 class="site-title">
+    <a href="/">Jezen Thomas</a>
+  </h1>
+  <p class="bio">
+    CTO &amp; Co-Founder at Supercede.
+  </p>
+</header>
+
+    <div id="main"><div class="container">
+  <article>
+    <h1 class="post-title">You Think CSS-in-JS is Bad?</h1>
+    <div class="post-meta">
+      <p class="post-date">
+        January 30<sup>th</sup>, 2019
+        
+        | Gdynia, Poland
+        
+      </p>
+    </div>
+    <p>Microsoft have announced they will finally terminate Internet Explorer 10 next
+year.</p>
+<p>Good riddance.</p>
+<p>However, I am nostalgic for the somewhat masochistic pleasure in finding hacky
+solutions for old IE versions.</p>
+<p>Earlier in my career I figured out that IE7 can be tricked into mimicking the
+behaviour of the <code>:before</code> and <code>:after</code> CSS pseudo-elements. You think
+CSS-in-JS is bad? Check this out:</p>
+<div class="highlight"><pre><span></span><span class="p">.</span><span class="nc">thing</span><span class="w"> </span><span class="p">{</span>
+<span class="w">  </span><span class="err">*</span><span class="n">zoom</span><span class="p">:</span><span class="w"> </span><span class="nf">expression</span><span class="p">(</span>
+<span class="w">    </span><span class="n">this</span><span class="err">.</span><span class="n">runtimeStyle</span><span class="err">.</span><span class="n">zoom</span><span class="w"> </span><span class="err">=</span><span class="w"> </span><span class="s1">'1'</span><span class="p">,</span>
+<span class="w">    </span><span class="n">this</span><span class="err">.</span><span class="nf">insertBefore</span><span class="p">(</span>
+<span class="w">      </span><span class="n">document</span><span class="err">.</span><span class="nf">createElement</span><span class="p">(</span><span class="s1">'i'</span><span class="p">),</span>
+<span class="w">      </span><span class="n">this</span><span class="err">.</span><span class="n">firstChild</span>
+<span class="w">      </span><span class="p">)</span><span class="err">.</span><span class="n">className</span><span class="w"> </span><span class="err">=</span><span class="w"> </span><span class="s1">'ie-before'</span>
+<span class="w">    </span><span class="p">);</span>
+<span class="p">}</span>
+
+<span class="p">.</span><span class="nc">thing</span><span class="w"> </span><span class="p">.</span><span class="nc">ie-before</span><span class="w"> </span><span class="p">{</span>
+<span class="w">  </span><span class="err">*</span><span class="n">zoom</span><span class="p">:</span><span class="w"> </span><span class="nf">expression</span><span class="p">(</span>
+<span class="w">    </span><span class="n">this</span><span class="err">.</span><span class="n">runtimeStyle</span><span class="err">.</span><span class="n">zoom</span><span class="w"> </span><span class="err">=</span><span class="w"> </span><span class="s1">'1'</span><span class="p">,</span>
+<span class="w">    </span><span class="n">this</span><span class="err">.</span><span class="n">innerHTML</span><span class="w"> </span><span class="err">=</span><span class="w"> </span><span class="s1">'|'</span>
+<span class="w">    </span><span class="p">);</span>
+<span class="p">}</span>
+</pre></div>
+
+<p>I don’t remember why <em>zoom</em> was relevant, but I do remember why the declaration
+was prefixed with an asterisk. Any rule prefixed with an asterisk was ignored
+as invalid by any browser other than IE7. This was a browser bug that many
+people relied upon at the time. The same bug also existed in IE6, but that
+browser’s special character was an underscore instead.</p>
+<p>Needless to say, it was a horrific state of affairs.</p>
+<p>Aren’t you glad that all you have to worry about these days is which
+over-engineered JavaScript build system you should use?</p>
+
+  </article>
+    
+        <p>likes</p>
+        <ul>
+            
+            <li> <a href="https://bsky.app/profile/maxfii.bsky.social/post/3lg6g3gzwr427#liked_by_did:plc:5cgdlq7fnk5imj26dcf2ux2j"><img src="https://webmention.io/avatar/cdn.bsky.app/b49d52e23e96bf9f6d221cc891f1ff87c9f6dd8f90c84baf0a8a5793c26b4771.jpg" alt></a> <\li>
+            
+            <li> <a href="https://bsky.app/profile/maxfii.bsky.social/post/3lg6g4oyyh427#liked_by_did:plc:5cgdlq7fnk5imj26dcf2ux2j"><img src="https://webmention.io/avatar/cdn.bsky.app/b49d52e23e96bf9f6d221cc891f1ff87c9f6dd8f90c84baf0a8a5793c26b4771.jpg" alt></a> <\li>
+            
+        <\ul>
+    
+    
+        <p>replies</p>
+        <ul>
+            
+            <li> <div><a href="https://bsky.app/profile/maxfii.bsky.social/post/3lg6g4oyyh427"><img src="https://webmention.io/avatar/cdn.bsky.app/b49d52e23e96bf9f6d221cc891f1ff87c9f6dd8f90c84baf0a8a5793c26b4771.jpg" alt></a><div><strong><a href="https://bsky.app/profile/maxfii.bsky.social"></a></strong><div class="Mention_content">what's this &lt;a href=&quot;https://maxfii.github.io&quot;&gt;maxfii.github.io&lt;/a&gt; you're talknig about  woof?</div><small><a href="https://bsky.app/profile/maxfii.bsky.social/post/3lg6g4oyyh427">2025-01-20T13:13:04+00:00</a></small></div></div> <\li>
+            
+        <\ul>
+    
+
+</div>
+</div>
+    <footer>&copy; 2025 Jezen Thomas</footer>
+
+
+    <script type="text/javascript">
+      [].slice.call(document.querySelectorAll('.footnote-ref sup')).forEach(function(el) {
+        var content = el.innerText;
+        el.innerText = '[' + content + ']';
+      })
+    </script>
+    <script type="text/javascript" src="https://www.htmlqa.com/send.js"></script>
+  </body>
+</html>
