@@ -10,22 +10,21 @@
       </p>
     </div>
     $body$
-  </article>
+    <br>
     $if(likes)$
-        <p>likes</p>
-        <ul>
-            $for(likes)$
-            <li> $html$ <\li>
-            $endfor$
-        <\ul>
+    <div class="body likes">
+        $for(likes)$
+             $html$
+        $endfor$
+    </div>
     $endif$
     $if(replies)$
-        <p>replies</p>
-        <ul>
-            $for(replies)$
-            <li> $html$ <\li>
-            $endfor$
-        <\ul>
+    <div class="body replies">
+        $for(replies)$
+            $html$
+        $endfor$
+    </div>
     $endif$
+  </article>
 
 </div>

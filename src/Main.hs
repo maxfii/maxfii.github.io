@@ -21,14 +21,18 @@ import Data.Time.Locale.Compat (defaultTimeLocale)
 import Debug.Trace
 import Hakyll hiding (host)
 import Redirects
-import System.FilePath.Posix (takeBaseName, takeDirectory, (</>))
+import System.FilePath.Posix (takeBaseName, takeDirectory, (</>), splitPath, joinPath, dropExtension)
 import Text.Pandoc
 import Text.Pandoc.Citeproc
 import Text.Pandoc.Highlighting (pygments, styleToCss, zenburn)
 import Text.Pandoc.Options
 import Text.Pandoc.Walk (walkM)
 
+import System.Environment.Blank (getEnv)
+import Debug.Trace
 import Text.Blaze.Html.Renderer.String (renderHtml)
+import Data.Map (Map)
+import Data.Map qualified as Map
 import Text.Blaze.Html5 ((!))
 import Text.Blaze.Html5 qualified as H
 import Text.Blaze.Html5.Attributes qualified as H
@@ -76,17 +80,35 @@ styleSheets =
   , "css/spirograph.css"
   ]
 
+type WMPost = String
+
 data StoredMentions = SM {
-    likes :: Vector Value,
-    replies :: Vector Value,
-    reposts :: Vector Value
+    likes :: Map WMPost (Vector Value),
+    replies :: Map WMPost (Vector Value),
+    reposts :: Map WMPost (Vector Value)
 } deriving (Show)
 
 instance FromJSON StoredMentions where
     parseJSON = withObject "webmention" $ \v -> do
         cs <- v .: "children"
         case cs of
-            Array vec -> pure $ SM likes replies reposts where
+            Array vec -> pure $ SM (foldToMap likes) (foldToMap replies) (foldToMap reposts) where
+
+                foldToMap objs = Map.fromList $ foldl go mempty (V.groupBy gb objs) where
+                    -- go :: [(WMPost, Vector Value)] -> Vector Value -> [(WMPost, Vector Value)]
+                    go wmmap ls
+                        | V.null ls = wmmap
+                        | otherwise = case traceShow "LOOK: this is head" $ V.head ls of
+                            Object o -> case JK.lookup "wm-target" o of
+                                Just (String t) -> (drop 8 $ T.unpack t, ls) : wmmap
+                                _ -> wmmap
+                            _ -> wmmap
+
+                gb (Object kmap1) (Object kmap2) = fromMaybe False $ (==)
+                    <$> JK.lookup "wm-target" kmap1
+                    <*> JK.lookup "wm-target" kmap2
+                gb _ _ = False
+
                 (likes, rest) = V.partition (isType "like-of") vec
                 (replies, reposts) = V.partition (isType "in-reply-to") rest
 
@@ -113,12 +135,12 @@ renderReply (Object kmap) = do
   String (T.unpack -> authorName) <- JK.lookup "name" author
   String (T.unpack -> authorUrl) <- JK.lookup "url" author
   pure . renderHtml $
-      H.div $ do
-          H.a ! H.href (fromString url) $
-              H.img ! H.src (fromString authorPhotoUrl) ! H.alt (fromString authorName)
-          H.div $ do
+      H.div ! H.class_ "mention" $ do
+          H.a ! H.class_ "mention__authorImageLink" ! H.href (fromString url) $
+              H.img ! H.class_ "mention_authorLink" ! H.src (fromString authorPhotoUrl) ! H.alt (fromString authorName)
+          H.div ! H.class_ "mention__authorLink" $ do
               H.strong (H.a ! H.href (fromString authorUrl) $ (fromString authorName))
-              H.div ! H.class_ "Mention_content" $ fromString chtml
+              H.div ! H.class_ "mention__content" $ fromString chtml
               H.small $ H.a ! H.href (fromString url) $ fromString published
 
 renderLike (Object kmap) = do
@@ -127,8 +149,8 @@ renderLike (Object kmap) = do
   String authorPhotoUrl <- JK.lookup "photo" author
   String (T.unpack -> authorPhotoUrl) <- JK.lookup "photo" author
   String (T.unpack -> authorName) <- JK.lookup "name" author
-  pure . renderHtml $ H.a ! H.href (fromString url) $
-      H.img ! H.src (fromString authorPhotoUrl) ! H.alt (fromString authorName)
+  pure . renderHtml $ H.a ! H.class_ "like" ! H.href (fromString url) $
+      H.img ! H.class_ "like__image" ! H.src (fromString authorPhotoUrl) ! H.alt (fromString authorName)
 
 main = do
     E.setLocaleEncoding E.utf8
@@ -136,34 +158,28 @@ main = do
 
 hmain :: IO ()
 hmain = hakyll $ do
-  let webementionIoToken = "pbj7jHLLhU_iUTPiavjsPg"
-
   mentions <- preprocess $ do
-      response <- W.get $ "https://webmention.io/api/mentions.jf2?domain=maxfii.github.io&token="
-        <> webementionIoToken
+    webementionIoToken <- getEnv "WMToken"
+    case webementionIoToken of
+      Nothing -> do
+        putStrLn $ "Warning: no webmention.io token found"
+        putStrLn $ "Warning: please set WMToken environmental variable"
+        pure $ SM mempty mempty mempty
+      Just token -> do
 
-      case response ^. W.responseStatus . W.statusCode of
-        200 -> case eitherDecode $ response ^. W.responseBody of
-            Right sm@(SM _ _ _) -> pure sm
-            Left err -> error err
-        bad -> error $ "Error fetching webmentions. status code: " <> show bad
+        response <- W.get $ "https://webmention.io/api/mentions.jf2?domain=maxfii.github.io&token=" <> token
 
-  let mkMentionPath type_ (Object kmap) = do
-        String target <- JK.lookup "wm-target" kmap
-        Number wmid <- JK.lookup "wm-id" kmap
-        pure . fromFilePath $ "mentions/" <> type_ <> "/" <> drop 8 (T.unpack target) <> "/" <> show wmid
+        case response ^. W.responseStatus . W.statusCode of
+          200 -> case eitherDecode $ response ^. W.responseBody of
+              Right sm@(SM _ _ _) -> pure sm
+              Left err -> do
+                putStrLn $ "Error: decoding webmentions. aeson error: "
+                    <> show err
+                pure $ SM mempty mempty mempty
 
-      saveMention render type_ obj = do
-        case mkMentionPath type_ obj of
-            Just path -> create [path] . compile $ do
-                it <- makeItem $ fromMaybe "" $ render obj
-                debugCompiler $ show $ "LOOK: saving" <> show it
-                pure it
-            Nothing -> fail $ "LOOK: Error: Couldn't save mention obj: " <> show obj
-
-  forM_ (likes mentions) (saveMention renderLike "likes")
-  forM_ (replies mentions) (saveMention renderReply "replies")
-  forM_ (reposts mentions) (saveMention renderRepost "reposts")
+          bad -> do
+            putStrLn $ "Error: fetching webmentions. status code: " <> show bad
+            pure $ SM mempty mempty mempty
 
   compiledStylesheetPath <- preprocess $ do
     styles <- mapM readFile styleSheets
@@ -204,16 +220,29 @@ hmain = hakyll $ do
     route postCleanRoute
     dep <- makePatternDependency "css/*"
     rulesExtraDependencies [dep] $ compile $ do
-      let wmctx = listField "likes" (field "html" (return . itemBody))
-                (loadAll $ "mentions/likes/*/**")
-              <> listField "replies" (field "html" (return . itemBody))
-                (loadAll $ "mentions/replies/*/**")
-
       ident <- getUnderlying
+
+      let wmreplies = listField "replies" (field "html" (return . itemBody))
+            (traverse (makeItem . fromMaybe "" . renderReply)
+                (V.toList . fromMaybe V.empty . Map.lookup target $ likes mentions))
+
+          wmlikes = listField "likes" (field "html" (return . itemBody))
+            (traverse (makeItem . fromMaybe "" . renderLike)
+                (V.toList . fromMaybe V.empty . Map.lookup target $ likes mentions))
+
+          ctx = postCtx <> utcCtx <> wmreplies <> wmlikes
+          cleanTarget = dropExtension . joinPath . drop 1 . splitPath . toFilePath
+          target = drop 8 host </> cleanTarget ident <> "/"
+
+      debugCompiler $ "LOOK: reading mentions: " <> (show . Map.keys $ likes mentions)
+      debugCompiler $ "LOOK: reading mentions: " <> (show . Map.keys  $ replies mentions)
+      debugCompiler $ "LOOK: reading target: " <> target
+
+
       blogCompiler
         >>= loadAndApplyTemplate "templates/post-content.html" postCtx
         >>= saveSnapshot "content"
-        >>= loadAndApplyTemplate "templates/post.html" (postCtx <> utcCtx <> wmctx)
+        >>= loadAndApplyTemplate "templates/post.html" ctx
         >>= loadAndApplyTemplate "templates/default.html" (postCtx <> boolField "page-blog" (const True))
         >>= cleanIndexUrls
 
