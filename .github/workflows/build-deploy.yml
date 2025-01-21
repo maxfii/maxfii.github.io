@@ -13,6 +13,7 @@ jobs:
       - run: nix profile install nixpkgs#python312Packages.pygments
       - run: nix build
       - name: Rebuild and Sync webmentions
+        environment: github-pages
         env:
           WMTOKEN: ${{ secrets.WMTOKEN }}
         run: ./result/bin/site rebuild -v
