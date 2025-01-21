@@ -19,7 +19,17 @@ jobs:
       - name: Rebuild and Sync webmentions
         env:
           WMTOKEN: $
-        run: ./result/bin/site rebuild
+        run: ./result/bin/site rebuild -v
+
+      - name: Commit webmentions to repository
+        env:
+          COMMIT_MSG: |
+            Sync webmentions
+        run: |
+          git config user.email "maxfiialkovskyi@protonmais.com"
+          git config user.name "maxfii"
+          git add webmentions.json
+          git diff --quiet && git diff --staged --quiet || (git commit -m "${COMMIT_MSG}"; git push origin dev)
 
       - name: Deploy
         uses: JamesIves/github-pages-deploy-action@v4
