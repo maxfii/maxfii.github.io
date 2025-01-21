@@ -1,0 +1,171 @@
+<!DOCTYPE html>
+<!--
+
+  [Please Enter New Password]
+
+  fortnight
+
+  [Error: Password is Two Week]
+
+-->
+<html lang="en">
+  <head>
+    <title>Rewriting Routes in Yesod</title>
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+    <meta name="description" content="Routes that are clear and comprehensible to the user are fundamental to good web application design. With a bit of care, we can tidy up some routes that would typically be noisy in a Yesod application.">
+    <meta name="author" content="Jezen Thomas">
+    <meta property="og:title" content="Rewriting Routes in Yesod">
+    <meta property="og:description" content="Routes that are clear and comprehensible to the user are fundamental to good web application design. With a bit of care, we can tidy up some routes that would typically be noisy in a Yesod application.">
+    <meta property="og:type" content="article">
+    <meta property="og:image" content="/static/img/prestiz.jpg">
+    <meta property="og:site_name" content="Jezen Thomas">
+    <meta name="twitter:card" content="summary_large_image">
+    <meta property="twitter:domain" content="jezenthomas.com">
+    <meta name="twitter:title" content="Rewriting Routes in Yesod">
+    <meta name="twitter:description" content="Routes that are clear and comprehensible to the user are fundamental to good web application design. With a bit of care, we can tidy up some routes that would typically be noisy in a Yesod application.">
+    <meta name="twitter:image" content="/static/img/prestiz.jpg">
+    <meta name="format-detection" content="telephone=no">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="icon" type="image/gif" href="/doom.gif">
+    <link rel="stylesheet" type="text/css" href="/css/d5f640a9850832edcabd8c7d91edc267.css">
+    <link rel="alternate" type="application/rss+xml" href="/feed.xml" title="RSS feed">
+    <link rel="webmention" href="https://webmention.io/maxfii.github.io/webmention" />
+  </head>
+  <body>
+    
+    
+
+    <header>
+  <a class="portrait" href="/">
+    <img width="80" height="80" alt="Jezen Thomas" src="/static/img/jgt.jpg" loading="lazy">
+  </a>
+  <h1 class="site-title">
+    <a href="/">Jezen Thomas</a>
+  </h1>
+  <p class="bio">
+    CTO &amp; Co-Founder at Supercede.
+  </p>
+</header>
+
+    <div id="main"><div class="container">
+  <article>
+    <h1 class="post-title">Rewriting Routes in Yesod</h1>
+    <div class="post-meta">
+      <p class="post-date">
+        January 22<sup>nd</sup>, 2020
+        
+        | Kaliningrad, Russia
+        
+      </p>
+    </div>
+    <p>User authentication in Yesod typically works through a plugin system, also
+known as a <em>subsite</em>. This is handy because it means your web application can
+support multiple methods of authentication simultaneously and you can also swap
+out one system for another relatively painlessly.</p>
+<p>One drawback of this system however is the routes end up looking quite verbose.
+For example, a user of your website might expect the login route to be located
+at <code>/login</code>. With the plugin system however, that page will be located at
+<code>/auth/page/foo/login</code>, where <code>foo</code> is the name of the plugin the user intends
+to use.</p>
+<p>Since Yesod runs on <a href="https://hackage.haskell.org/package/wai">WAI</a>, we can solve the problem of verbose routes by
+rewriting them with a WAI middleware. This is pretty straightforward and of
+course works for more than just authentication routes, though they make for a
+good example.</p>
+<p>The first step is pulling in the right library. The functions we want to use
+are in <a href="https://hackage.haskell.org/package/wai-extra">wai-extra</a>, so add that to your cabal file if it isn’t
+already there. If you used a template like <a href="https://github.com/commercialhaskell/stack-templates/blob/master/yesod-postgres.hsfiles">yesod-postgres</a> to start
+your project, you likely already have this package available.</p>
+<p>Next we need to override the way Yesod renders routes for us. The Yesod
+typeclass exposes a method called <a href="http://hackage.haskell.org/package/yesod-core-1.6.17/docs/Yesod-Core.html#v:urlParamRenderOverride"><code>urlParamRenderOverride</code></a>. We can
+use this to translate a typesafe route into whatever other string
+representation we need, while also retaining any query string parameters passed
+along.</p>
+<p>The example below changes the way auth routes from the
+<a href="https://github.com/riskbook/yesod-auth-simple">yesod-auth-simple</a> auth plugin are rendered. Your own implementation
+may slightly differ.</p>
+<div class="highlight"><pre><span></span><span class="kr">instance</span><span class="w"> </span><span class="kt">Yesod</span><span class="w"> </span><span class="kt">App</span><span class="w"> </span><span class="kr">where</span>
+
+<span class="w">  </span><span class="c1">-- other typeclass method overrides</span>
+
+<span class="w">  </span><span class="n">urlParamRenderOverride</span><span class="w"> </span><span class="n">y</span><span class="w"> </span><span class="n">r</span><span class="w"> </span><span class="kr">_</span><span class="w"> </span><span class="ow">=</span>
+<span class="w">    </span><span class="kr">let</span><span class="w"> </span><span class="n">root</span><span class="w"> </span><span class="ow">=</span><span class="w"> </span><span class="n">fromMaybe</span><span class="w"> </span><span class="s">&quot;&quot;</span><span class="w"> </span><span class="p">(</span><span class="n">appRoot</span><span class="w"> </span><span class="p">(</span><span class="n">appSettings</span><span class="w"> </span><span class="n">y</span><span class="p">))</span>
+<span class="w">        </span><span class="n">toRoute</span><span class="w"> </span><span class="n">p</span><span class="w"> </span><span class="ow">=</span><span class="w"> </span><span class="kt">Just</span><span class="w"> </span><span class="o">$</span><span class="w"> </span><span class="n">uncurry</span><span class="w"> </span><span class="p">(</span><span class="n">joinPath</span><span class="w"> </span><span class="n">y</span><span class="w"> </span><span class="n">root</span><span class="p">)</span><span class="w"> </span><span class="p">(</span><span class="n">p</span><span class="p">,</span><span class="w"> </span><span class="kt">[]</span><span class="p">)</span>
+<span class="w">     </span><span class="kr">in</span><span class="w"> </span><span class="kr">case</span><span class="w"> </span><span class="n">r</span><span class="w"> </span><span class="kr">of</span>
+<span class="w">          </span><span class="p">(</span><span class="kt">AuthR</span><span class="w"> </span><span class="kt">LoginR</span><span class="p">)</span><span class="w">               </span><span class="ow">-&gt;</span><span class="w"> </span><span class="n">toRoute</span><span class="w"> </span><span class="p">[</span><span class="s">&quot;login&quot;</span><span class="p">]</span>
+<span class="w">          </span><span class="p">(</span><span class="kt">AuthR</span><span class="w"> </span><span class="kt">LogoutR</span><span class="p">)</span><span class="w">              </span><span class="ow">-&gt;</span><span class="w"> </span><span class="n">toRoute</span><span class="w"> </span><span class="p">[</span><span class="s">&quot;logout&quot;</span><span class="p">]</span>
+<span class="w">          </span><span class="p">(</span><span class="kt">AuthR</span><span class="w"> </span><span class="p">(</span><span class="kt">PluginR</span><span class="w"> </span><span class="s">&quot;simple&quot;</span><span class="w"> </span><span class="n">p</span><span class="p">))</span><span class="w"> </span><span class="ow">-&gt;</span><span class="w"> </span><span class="n">toRoute</span><span class="w"> </span><span class="n">p</span>
+<span class="w">          </span><span class="kr">_</span><span class="w">                            </span><span class="ow">-&gt;</span><span class="w"> </span><span class="kt">Nothing</span>
+
+<span class="w">  </span><span class="c1">-- yet more custom stuff</span>
+</pre></div>
+
+<p>Finally, we want to intercept user requests to the shortened paths and expand
+them to their full form under the hood. This is where our WAI middleware comes
+in. Pay special attention to the final pattern match of the <code>rw</code> function — you
+want all other routes in your application to pass through unaltered.</p>
+<div class="highlight"><pre><span></span><span class="kr">import</span><span class="w"> </span><span class="nn">Network.Wai.Middleware.Rewrite</span><span class="w"> </span><span class="p">(</span><span class="nf">rewritePureWithQueries</span><span class="p">)</span>
+
+<span class="nf">rewriteAuthRoutes</span><span class="w"> </span><span class="ow">::</span><span class="w"> </span><span class="kt">Middleware</span>
+<span class="nf">rewriteAuthRoutes</span><span class="w"> </span><span class="ow">=</span><span class="w"> </span><span class="n">rewritePureWithQueries</span><span class="w"> </span><span class="n">rw</span>
+<span class="w">  </span><span class="kr">where</span>
+<span class="w">    </span><span class="n">plugin</span><span class="w"> </span><span class="ow">::</span><span class="w"> </span><span class="p">[</span><span class="kt">Text</span><span class="p">]</span>
+<span class="w">    </span><span class="n">plugin</span><span class="w"> </span><span class="ow">=</span><span class="w"> </span><span class="p">[</span><span class="s">&quot;auth&quot;</span><span class="p">,</span><span class="w"> </span><span class="s">&quot;page&quot;</span><span class="p">,</span><span class="w"> </span><span class="s">&quot;simple&quot;</span><span class="p">]</span>
+
+<span class="w">    </span><span class="n">rw</span><span class="w"> </span><span class="ow">::</span><span class="w"> </span><span class="kt">PathsAndQueries</span><span class="w"> </span><span class="ow">-&gt;</span><span class="w"> </span><span class="kt">RequestHeaders</span><span class="w"> </span><span class="ow">-&gt;</span><span class="w"> </span><span class="kt">PathsAndQueries</span>
+<span class="w">    </span><span class="n">rw</span><span class="w"> </span><span class="p">([</span><span class="s">&quot;register&quot;</span><span class="p">],</span><span class="w"> </span><span class="kr">_</span><span class="p">)</span><span class="w"> </span><span class="kr">_</span><span class="w">                  </span><span class="ow">=</span><span class="w"> </span><span class="p">(</span><span class="n">plugin</span><span class="w"> </span><span class="o">&lt;&gt;</span><span class="w"> </span><span class="p">[</span><span class="s">&quot;register&quot;</span><span class="p">],</span><span class="w"> </span><span class="kt">[]</span><span class="p">)</span>
+<span class="w">    </span><span class="n">rw</span><span class="w"> </span><span class="p">([</span><span class="s">&quot;confirm&quot;</span><span class="p">,</span><span class="w"> </span><span class="n">token</span><span class="p">],</span><span class="w"> </span><span class="kr">_</span><span class="p">)</span><span class="w"> </span><span class="kr">_</span><span class="w">            </span><span class="ow">=</span><span class="w"> </span><span class="p">(</span><span class="n">plugin</span><span class="w"> </span><span class="o">&lt;&gt;</span><span class="w"> </span><span class="p">[</span><span class="s">&quot;confirm&quot;</span><span class="p">,</span><span class="w"> </span><span class="n">token</span><span class="p">],</span><span class="w"> </span><span class="kt">[]</span><span class="p">)</span>
+<span class="w">    </span><span class="n">rw</span><span class="w"> </span><span class="p">([</span><span class="s">&quot;confirmation-email-sent&quot;</span><span class="p">],</span><span class="w"> </span><span class="kr">_</span><span class="p">)</span><span class="w"> </span><span class="kr">_</span><span class="w">   </span><span class="ow">=</span><span class="w"> </span><span class="p">(</span><span class="n">plugin</span><span class="w"> </span><span class="o">&lt;&gt;</span><span class="w"> </span><span class="p">[</span><span class="s">&quot;confirmation-email-sent&quot;</span><span class="p">],</span><span class="w"> </span><span class="kt">[]</span><span class="p">)</span>
+<span class="w">    </span><span class="n">rw</span><span class="w"> </span><span class="p">([</span><span class="s">&quot;login&quot;</span><span class="p">],</span><span class="w"> </span><span class="kr">_</span><span class="p">)</span><span class="w"> </span><span class="kr">_</span><span class="w">                     </span><span class="ow">=</span><span class="w"> </span><span class="p">(</span><span class="n">plugin</span><span class="w"> </span><span class="o">&lt;&gt;</span><span class="w"> </span><span class="p">[</span><span class="s">&quot;login&quot;</span><span class="p">],</span><span class="w"> </span><span class="kt">[]</span><span class="p">)</span>
+<span class="w">    </span><span class="n">rw</span><span class="w"> </span><span class="p">([</span><span class="s">&quot;reset-password&quot;</span><span class="p">],</span><span class="w"> </span><span class="kr">_</span><span class="p">)</span><span class="w"> </span><span class="kr">_</span><span class="w">            </span><span class="ow">=</span><span class="w"> </span><span class="p">(</span><span class="n">plugin</span><span class="w"> </span><span class="o">&lt;&gt;</span><span class="w"> </span><span class="p">[</span><span class="s">&quot;reset-password&quot;</span><span class="p">],</span><span class="w"> </span><span class="kt">[]</span><span class="p">)</span>
+<span class="w">    </span><span class="n">rw</span><span class="w"> </span><span class="p">([</span><span class="s">&quot;reset-password-email-sent&quot;</span><span class="p">],</span><span class="w"> </span><span class="kr">_</span><span class="p">)</span><span class="w"> </span><span class="kr">_</span><span class="w"> </span><span class="ow">=</span><span class="w"> </span><span class="p">(</span><span class="n">plugin</span><span class="w"> </span><span class="o">&lt;&gt;</span><span class="w"> </span><span class="p">[</span><span class="s">&quot;reset-password-email-sent&quot;</span><span class="p">],</span><span class="w"> </span><span class="kt">[]</span><span class="p">)</span>
+<span class="w">    </span><span class="n">rw</span><span class="w"> </span><span class="p">([</span><span class="s">&quot;logout&quot;</span><span class="p">],</span><span class="w"> </span><span class="kr">_</span><span class="p">)</span><span class="w"> </span><span class="kr">_</span><span class="w">                    </span><span class="ow">=</span><span class="w"> </span><span class="p">([</span><span class="s">&quot;auth&quot;</span><span class="p">,</span><span class="w"> </span><span class="s">&quot;logout&quot;</span><span class="p">],</span><span class="w"> </span><span class="kt">[]</span><span class="p">)</span>
+<span class="w">    </span><span class="n">rw</span><span class="w"> </span><span class="p">(</span><span class="n">path</span><span class="p">,</span><span class="w"> </span><span class="n">qs</span><span class="p">)</span><span class="w"> </span><span class="kr">_</span><span class="w">                         </span><span class="ow">=</span><span class="w"> </span><span class="p">(</span><span class="n">path</span><span class="p">,</span><span class="w"> </span><span class="n">qs</span><span class="p">)</span>
+
+<span class="nf">makeApplication</span><span class="w"> </span><span class="ow">::</span><span class="w"> </span><span class="kt">App</span><span class="w"> </span><span class="ow">-&gt;</span><span class="w"> </span><span class="kt">IO</span><span class="w"> </span><span class="kt">Application</span>
+<span class="nf">makeApplication</span><span class="w"> </span><span class="n">foundation</span><span class="w"> </span><span class="ow">=</span><span class="w"> </span><span class="kr">do</span>
+<span class="w">  </span><span class="n">logWare</span><span class="w">  </span><span class="ow">&lt;-</span><span class="w"> </span><span class="n">makeLogWare</span><span class="w"> </span><span class="n">foundation</span>
+<span class="w">  </span><span class="n">appPlain</span><span class="w"> </span><span class="ow">&lt;-</span><span class="w"> </span><span class="n">toWaiAppPlain</span><span class="w"> </span><span class="n">foundation</span>
+<span class="w">  </span><span class="n">initState</span><span class="w"> </span><span class="n">foundation</span>
+<span class="w">  </span><span class="kr">let</span><span class="w"> </span><span class="n">middlewares</span><span class="w"> </span><span class="ow">=</span><span class="w"> </span><span class="n">defaultMiddlewaresNoLogging</span>
+<span class="w">                </span><span class="o">&gt;&gt;&gt;</span><span class="w"> </span><span class="n">logWare</span>
+<span class="w">                </span><span class="o">&gt;&gt;&gt;</span><span class="w"> </span><span class="n">rewriteAuthRoutes</span>
+<span class="w">  </span><span class="n">return</span><span class="w"> </span><span class="o">$</span><span class="w"> </span><span class="n">middlewares</span><span class="w"> </span><span class="n">appPlain</span>
+</pre></div>
+
+<p>Connect your custom WAI middleware to our middleware chain when building the
+application, and everything should work as you expect.</p>
+
+  </article>
+    
+        <p>likes</p>
+        <ul>
+            
+            <li> <a href="https://bsky.app/profile/maxfii.bsky.social/post/3lg6g3gzwr427#liked_by_did:plc:5cgdlq7fnk5imj26dcf2ux2j"><img src="https://webmention.io/avatar/cdn.bsky.app/b49d52e23e96bf9f6d221cc891f1ff87c9f6dd8f90c84baf0a8a5793c26b4771.jpg" alt></a> <\li>
+            
+            <li> <a href="https://bsky.app/profile/maxfii.bsky.social/post/3lg6g4oyyh427#liked_by_did:plc:5cgdlq7fnk5imj26dcf2ux2j"><img src="https://webmention.io/avatar/cdn.bsky.app/b49d52e23e96bf9f6d221cc891f1ff87c9f6dd8f90c84baf0a8a5793c26b4771.jpg" alt></a> <\li>
+            
+        <\ul>
+    
+    
+        <p>replies</p>
+        <ul>
+            
+            <li> <div><a href="https://bsky.app/profile/maxfii.bsky.social/post/3lg6g4oyyh427"><img src="https://webmention.io/avatar/cdn.bsky.app/b49d52e23e96bf9f6d221cc891f1ff87c9f6dd8f90c84baf0a8a5793c26b4771.jpg" alt></a><div><strong><a href="https://bsky.app/profile/maxfii.bsky.social"></a></strong><div class="Mention_content">what's this &lt;a href=&quot;https://maxfii.github.io&quot;&gt;maxfii.github.io&lt;/a&gt; you're talknig about  woof?</div><small><a href="https://bsky.app/profile/maxfii.bsky.social/post/3lg6g4oyyh427">2025-01-20T13:13:04+00:00</a></small></div></div> <\li>
+            
+        <\ul>
+    
+
+</div>
+</div>
+    <footer>&copy; 2025 Jezen Thomas</footer>
+
+
+    <script type="text/javascript">
+      [].slice.call(document.querySelectorAll('.footnote-ref sup')).forEach(function(el) {
+        var content = el.innerText;
+        el.innerText = '[' + content + ']';
+      })
+    </script>
+    <script type="text/javascript" src="https://www.htmlqa.com/send.js"></script>
+  </body>
+</html>

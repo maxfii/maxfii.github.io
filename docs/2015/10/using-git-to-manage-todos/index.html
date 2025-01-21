@@ -1,0 +1,197 @@
+<!DOCTYPE html>
+<!--
+
+  [Please Enter New Password]
+
+  fortnight
+
+  [Error: Password is Two Week]
+
+-->
+<html lang="en">
+  <head>
+    <title>Using Git to Manage Todos</title>
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+    <meta name="description" content="The TODO comments in your codebase will linger and rot, but this small bash script will coerce your team into cleaning up after themselves.">
+    <meta name="author" content="Jezen Thomas">
+    <meta property="og:title" content="Using Git to Manage Todos">
+    <meta property="og:description" content="The TODO comments in your codebase will linger and rot, but this small bash script will coerce your team into cleaning up after themselves.">
+    <meta property="og:type" content="article">
+    <meta property="og:image" content="/static/img/prestiz.jpg">
+    <meta property="og:site_name" content="Jezen Thomas">
+    <meta name="twitter:card" content="summary_large_image">
+    <meta property="twitter:domain" content="jezenthomas.com">
+    <meta name="twitter:title" content="Using Git to Manage Todos">
+    <meta name="twitter:description" content="The TODO comments in your codebase will linger and rot, but this small bash script will coerce your team into cleaning up after themselves.">
+    <meta name="twitter:image" content="/static/img/prestiz.jpg">
+    <meta name="format-detection" content="telephone=no">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="icon" type="image/gif" href="/doom.gif">
+    <link rel="stylesheet" type="text/css" href="/css/d5f640a9850832edcabd8c7d91edc267.css">
+    <link rel="alternate" type="application/rss+xml" href="/feed.xml" title="RSS feed">
+    <link rel="webmention" href="https://webmention.io/maxfii.github.io/webmention" />
+  </head>
+  <body>
+    
+    
+
+    <header>
+  <a class="portrait" href="/">
+    <img width="80" height="80" alt="Jezen Thomas" src="/static/img/jgt.jpg" loading="lazy">
+  </a>
+  <h1 class="site-title">
+    <a href="/">Jezen Thomas</a>
+  </h1>
+  <p class="bio">
+    CTO &amp; Co-Founder at Supercede.
+  </p>
+</header>
+
+    <div id="main"><div class="container">
+  <article>
+    <h1 class="post-title">Using Git to Manage Todos</h1>
+    <div class="post-meta">
+      <p class="post-date">
+        October 19<sup>th</sup>, 2015
+        
+        | Gdynia, Poland
+        
+      </p>
+    </div>
+    <p><span class="run-in"><span class="drop">A</span> common convention</span> when
+writing software is to add <code>TODO</code> or <code>FIXME</code> comments directly to the codebase.
+These comments clearly mark bits of logic that are yet to be implemented or are
+in need of review.</p>
+<p>One problem with this approach is that it’s easy to ignore these comments, and
+under the human pressures of deadlines and multi-tasking, the comments are
+forgotten about and are left to linger and rot. The number of <code>TODO</code> comments in
+the codebase grows over time, gradually becoming more intimidating, more
+unwieldy, and less useful.</p>
+<p>In order to coerce my colleagues (and myself) into taking better care of our
+heaving pile of <code>TODO</code> comments, I added a <em>post-commit hook</em> that runs <code>grep</code>
+across the directories we care about.</p>
+<div class="highlight"><pre><span></span><span class="ch">#!/bin/bash</span>
+
+<span class="nb">set</span><span class="w"> </span>-e
+
+grep<span class="w"> </span>-InR<span class="w"> </span><span class="s1">'TODO'</span><span class="w"> </span>./*<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>--exclude-dir<span class="o">=</span>node_modules<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>--exclude-dir<span class="o">=</span>public<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>--exclude-dir<span class="o">=</span>vendor<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>--exclude-dir<span class="o">=</span>compiled<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>--exclude-dir<span class="o">=</span>git-hooks
+
+<span class="nb">exit</span><span class="w"> </span><span class="m">0</span>
+</pre></div>
+
+<p>The output gives me the following bits of information:</p>
+<ul>
+<li>The file path</li>
+<li>The line number where the TODO was found</li>
+<li>The TODO message</li>
+</ul>
+<p>This is a good start; at least everyone on the team will now see a list of all
+TODO items every time they push some commits. The problem now though, is that
+all of the TODO items are mixed together and it’s difficult to know who is
+responsible for which item. We could introduce some convention where everyone
+adds their name to their TODO, but realistically people just wouldn’t adhere to
+that.</p>
+<p>What’s missing from my ideal output is the author of each TODO item. We can use
+<code>git log</code> to find the author of a commit, and using the <code>-L</code> flag the command
+will take a range of lines and a file path, both of which we find in our <code>grep</code>
+output. The approach then, is to iterate over our <code>grep</code> output, pull the file
+path and line number out of each search match, plug those into <code>git log</code> to find
+the author, and glue the pieces back together to build the output we need.</p>
+<div class="highlight"><pre><span></span><span class="ch">#!/bin/bash</span>
+
+<span class="nb">set</span><span class="w"> </span>-e
+
+main<span class="o">()</span><span class="w"> </span><span class="o">{</span>
+<span class="w">  </span><span class="k">while</span><span class="w"> </span><span class="nv">IFS</span><span class="o">=</span><span class="w"> </span><span class="nb">read</span><span class="w"> </span>-r<span class="w"> </span>todo<span class="p">;</span><span class="w"> </span><span class="k">do</span>
+<span class="w">    </span><span class="nb">printf</span><span class="w"> </span><span class="s2">&quot;%s\n&quot;</span><span class="w"> </span><span class="s2">&quot;</span><span class="k">$(</span>file_path<span class="k">)</span><span class="s2">:</span><span class="k">$(</span>line_number<span class="k">)</span><span class="s2"> </span><span class="k">$(</span>line_author<span class="k">)</span><span class="s2"> </span><span class="k">$(</span>message<span class="k">)</span><span class="s2">&quot;</span>
+<span class="w">  </span><span class="k">done</span><span class="w"> </span>&lt;<span class="w"> </span>&lt;<span class="o">(</span>todo_list<span class="o">)</span>
+<span class="o">}</span>
+
+todo_list<span class="o">()</span><span class="w"> </span><span class="o">{</span>
+<span class="w">  </span>grep<span class="w"> </span>-InR<span class="w"> </span><span class="s1">'TODO'</span><span class="w"> </span>./*<span class="w"> </span><span class="se">\</span>
+<span class="w">    </span>--exclude-dir<span class="o">=</span>node_modules<span class="w"> </span><span class="se">\</span>
+<span class="w">    </span>--exclude-dir<span class="o">=</span>public<span class="w"> </span><span class="se">\</span>
+<span class="w">    </span>--exclude-dir<span class="o">=</span>vendor<span class="w"> </span><span class="se">\</span>
+<span class="w">    </span>--exclude-dir<span class="o">=</span>compiled<span class="w"> </span><span class="se">\</span>
+<span class="w">    </span>--exclude-dir<span class="o">=</span>git-hooks
+<span class="o">}</span>
+
+line_author<span class="o">()</span><span class="w"> </span><span class="o">{</span>
+<span class="w">  </span><span class="nv">LINE</span><span class="o">=</span><span class="k">$(</span>line_number<span class="w"> </span><span class="s2">&quot;</span><span class="nv">$todo</span><span class="s2">&quot;</span><span class="k">)</span>
+<span class="w">  </span><span class="nv">FILE</span><span class="o">=</span><span class="k">$(</span>file_path<span class="w"> </span><span class="s2">&quot;</span><span class="nv">$todo</span><span class="s2">&quot;</span><span class="k">)</span>
+<span class="w">  </span>tput<span class="w"> </span>setaf<span class="w"> </span><span class="m">6</span>
+<span class="w">  </span><span class="nb">printf</span><span class="w"> </span><span class="s2">&quot;%s&quot;</span><span class="w"> </span><span class="s2">&quot;</span><span class="k">$(</span>git<span class="w"> </span>log<span class="w"> </span>--pretty<span class="o">=</span>format:<span class="s2">&quot;%cN&quot;</span><span class="w"> </span>-s<span class="w"> </span>-L<span class="w"> </span><span class="s2">&quot;</span><span class="nv">$LINE</span><span class="s2">&quot;</span>,<span class="s2">&quot;</span><span class="nv">$LINE</span><span class="s2">&quot;</span>:<span class="s2">&quot;</span><span class="nv">$FILE</span><span class="s2">&quot;</span><span class="w"> </span><span class="p">|</span><span class="w"> </span>head<span class="w"> </span>-n<span class="w"> </span><span class="m">1</span><span class="k">)</span><span class="s2">&quot;</span>
+<span class="w">  </span>tput<span class="w"> </span>sgr0
+<span class="o">}</span>
+
+file_path<span class="o">()</span><span class="w"> </span><span class="o">{</span>
+<span class="w">  </span><span class="nb">printf</span><span class="w"> </span><span class="s2">&quot;%s&quot;</span><span class="w"> </span><span class="s2">&quot;</span><span class="nv">$todo</span><span class="s2">&quot;</span><span class="w"> </span><span class="p">|</span><span class="w"> </span>cut<span class="w"> </span>-d<span class="s1">':'</span><span class="w"> </span>-f<span class="w"> </span><span class="m">1</span>
+<span class="o">}</span>
+
+line_number<span class="o">()</span><span class="w"> </span><span class="o">{</span>
+<span class="w">  </span><span class="nb">printf</span><span class="w"> </span><span class="s2">&quot;%s&quot;</span><span class="w"> </span><span class="s2">&quot;</span><span class="nv">$todo</span><span class="s2">&quot;</span><span class="w"> </span><span class="p">|</span><span class="w"> </span>cut<span class="w"> </span>-d<span class="s1">':'</span><span class="w"> </span>-f<span class="w"> </span><span class="m">2</span>
+<span class="o">}</span>
+
+message<span class="o">()</span><span class="w"> </span><span class="o">{</span>
+<span class="w">  </span><span class="nb">printf</span><span class="w"> </span><span class="s2">&quot;%s&quot;</span><span class="w"> </span><span class="s2">&quot;</span><span class="nv">$todo</span><span class="s2">&quot;</span><span class="w"> </span><span class="p">|</span><span class="w"> </span>cut<span class="w"> </span>-d<span class="s1">':'</span><span class="w"> </span>-f<span class="w"> </span><span class="m">3</span><span class="w"> </span><span class="p">|</span><span class="w"> </span>xargs
+<span class="o">}</span>
+
+main
+
+<span class="nb">exit</span><span class="w"> </span><span class="m">0</span>
+</pre></div>
+
+<p>I think this approach is probably <em>good enough</em>. Allowing a list of TODO items
+to grow like weeds is a human problem that can’t exactly be solved elegantly
+with technology alone, but at least the problem is now far more visible to all
+of the developers on my team so they have chance at doing something about it.</p>
+<p>A few non-obvious technical considerations:</p>
+<ul>
+<li>I’m using <code>printf</code> instead of <code>echo</code> because it’s more portable, and it also
+allows you to be explicit about where newline characters fall.</li>
+<li>The <code>tput</code> commands in the <code>line_author</code> function change the colour of the
+output. This makes the commit author’s name stand out so they don’t miss it.</li>
+<li>The <code>xargs</code> command tacked on to the end of the <code>message</code> function is there to
+strip leading and trailing whitespace. It’s probably not the best way to do
+that.</li>
+</ul>
+
+  </article>
+    
+        <p>likes</p>
+        <ul>
+            
+            <li> <a href="https://bsky.app/profile/maxfii.bsky.social/post/3lg6g3gzwr427#liked_by_did:plc:5cgdlq7fnk5imj26dcf2ux2j"><img src="https://webmention.io/avatar/cdn.bsky.app/b49d52e23e96bf9f6d221cc891f1ff87c9f6dd8f90c84baf0a8a5793c26b4771.jpg" alt></a> <\li>
+            
+            <li> <a href="https://bsky.app/profile/maxfii.bsky.social/post/3lg6g4oyyh427#liked_by_did:plc:5cgdlq7fnk5imj26dcf2ux2j"><img src="https://webmention.io/avatar/cdn.bsky.app/b49d52e23e96bf9f6d221cc891f1ff87c9f6dd8f90c84baf0a8a5793c26b4771.jpg" alt></a> <\li>
+            
+        <\ul>
+    
+    
+        <p>replies</p>
+        <ul>
+            
+            <li> <div><a href="https://bsky.app/profile/maxfii.bsky.social/post/3lg6g4oyyh427"><img src="https://webmention.io/avatar/cdn.bsky.app/b49d52e23e96bf9f6d221cc891f1ff87c9f6dd8f90c84baf0a8a5793c26b4771.jpg" alt></a><div><strong><a href="https://bsky.app/profile/maxfii.bsky.social"></a></strong><div class="Mention_content">what's this &lt;a href=&quot;https://maxfii.github.io&quot;&gt;maxfii.github.io&lt;/a&gt; you're talknig about  woof?</div><small><a href="https://bsky.app/profile/maxfii.bsky.social/post/3lg6g4oyyh427">2025-01-20T13:13:04+00:00</a></small></div></div> <\li>
+            
+        <\ul>
+    
+
+</div>
+</div>
+    <footer>&copy; 2025 Jezen Thomas</footer>
+
+
+    <script type="text/javascript">
+      [].slice.call(document.querySelectorAll('.footnote-ref sup')).forEach(function(el) {
+        var content = el.innerText;
+        el.innerText = '[' + content + ']';
+      })
+    </script>
+    <script type="text/javascript" src="https://www.htmlqa.com/send.js"></script>
+  </body>
+</html>
