@@ -18,7 +18,7 @@ jobs:
       - run: nix build
       - name: Rebuild and Sync webmentions
         env:
-          WMTOKEN: ${{ vars.WMTOKEN }}
+          WMTOKEN: $
         run: ./result/bin/site rebuild -v
 
       - name: Commit webmentions to repository
